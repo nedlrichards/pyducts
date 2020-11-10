@@ -70,8 +70,6 @@ CONTAINS
              z   = SSP%Depth( Medium ) + ( iz - 1 ) * h
              cPT =  cP( iz )
              cST =  cS( iz )
-             WRITE( PRTFile, FMT="( F10.2, 3X, 2F10.2, 3X, F6.2, 3X, 2F10.4 )" ) &
-                  z,  REAL( cPT ),  REAL( cST ), rho( iz ), AIMAG( cPT ), AIMAG( cST )
           END DO
        ELSE
           CALL ANALYT( cP, cS, rho, Medium, N1 )
@@ -85,7 +83,6 @@ CONTAINS
     CASE ( 'S' )  !  Cubic spline profile option 
        CALL cCubic(   cP, cS, rho, Medium, N1, Task )
     CASE DEFAULT  !  Non-existent profile option 
-       WRITE( PRTFile, * ) 'Profile option: ', SSP%Type
        CALL ERROUT( 'EvaluateSSP', 'Unknown profile option' )
     END SELECT
 

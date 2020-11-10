@@ -49,16 +49,9 @@ CONTAINS
 
     NElts  = 0         ! this is a dummy variable, passed to profil during read of SSP
 
-    WRITE( PRTFile, * ) '_________________________________________________'
-    WRITE( PRTFile, * )
     READ(  ENVFile, *, END = 9999 ) Title( 9 : 80 )
-    WRITE( PRTFile, * ) Title
-
     READ(  ENVFile, *, END = 9999  ) freq0
-    WRITE( PRTFile, "( ' Nominal Frequency = ', G11.4, 'Hz' )" ) freq0
-
     READ(  ENVFile, *, END = 9999  ) SSP%NMedia
-    WRITE( PRTFile, "( ' NMedia    = ', I3,         / )" ) SSP%NMedia
 
     IF ( SSP%NMedia > MaxMedium ) THEN
        WRITE( PRTFile, * ) 'MaxMedia = ', MaxMedium
@@ -66,29 +59,22 @@ CONTAINS
     ENDIF
 
     CALL ReadTopOpt( TopOpt, HSTop%BC, AttenUnit )
-
-    WRITE( PRTFile, "( //, '   z (m)     alphaR (m/s)   betaR  rho (g/cm^3)  alphaI     betaI', / )" )
     CALL TopBot( HSTop )   ! read top BC
 
-    !  *** Internal media *** 
+    !  *** Internal media ***
 
     MediumLoop: DO Medium = 1, SSP%NMedia
        IF ( AttenUnit( 1 : 1 ) == 'm' ) THEN   ! this particular attenuation unit needs to get a power law and transition frequency
           READ(  ENVFile, *, END = 9999 ) NG( Medium ), SSP%sigma( Medium ), &
                SSP%Depth( Medium + 1 ), SSP%beta( Medium ), SSP%fT( Medium )
-          WRITE( PRTFile, "( /, '  ( # mesh pts = ', I5, '  RMS roughness = ', G10.3, ' beta = ', G10.3, ' fT = ', G11.4, ' )')" ) &
-               NG( Medium ), SSP%sigma( Medium ), SSP%beta( Medium ), SSP%fT( Medium )
-
        ELSE
           READ(  ENVFile, *, END = 9999 ) NG( Medium ), SSP%sigma( Medium ), SSP%Depth( Medium + 1 )
-          WRITE( PRTFile, "( /, '       ( # mesh points = ', I5, '  RMS roughness = ', G10.3, ' m', ' )')" ) &
-               NG( Medium ), SSP%sigma( Medium )
        END IF
 
        IF ( ( ( 25 * freq0 / 1500 ) * SSP%sigma( Medium ) ) ** 2 > 1 ) WRITE( PRTFile, * ) &
           'Warning in ReadEnvironmentMod : The roughness parameter exceeds the region of validity for the scatter approximation'
 
-       !  Call EvaluateSSP to read in SSP 
+       !  Call EvaluateSSP to read in SSP
        Task = 'INIT'
        CALL EvaluateSSP( cP, cS, rho, Medium, NElts, freq0, Task )
 
@@ -101,9 +87,7 @@ CONTAINS
 
        IF ( NG( Medium ) == 0 ) THEN    ! automatic calculation of f.d. mesh
           NG( Medium ) = Nneeded
-          WRITE( PRTFile, * ) '       ( Number mesh points auto calc. = ', NG( Medium ), ' )'
        ELSE IF ( NG( Medium ) < Nneeded / 2 ) THEN
-          WRITE( PRTFILE, * ) 'Number of mesh points needed = ', Nneeded
           CALL ERROUT( 'ReadEnvironment', 'Mesh is too coarse' )
        END IF
 
@@ -111,14 +95,10 @@ CONTAINS
 
     ! *** Bottom properties ***
 
-    WRITE( PRTFile, * )
     IF ( AttenUnit( 1 : 1 ) == 'm' ) THEN   ! this particular attenuation unit needs to get a power law and transition frequency
        READ( ENVFile, *, END = 9999 ) BotOpt( 1 : 8 ), SSP%sigma( SSP%NMedia + 1 ), HSBot%beta, HSBot%fT
-       WRITE( PRTFile, "( 22X, '( RMS roughness = ', G10.3,' beta = ', G10.3, ' fT = ', G10.3, ' )' )" ) &
-            SSP%sigma( SSP%NMedia + 1 ), HSBot%beta, HSBot%fT
     ELSE
        READ( ENVFile, *, END = 9999 ) BotOpt( 1 : 8 ), SSP%sigma( SSP%NMedia + 1 )
-       WRITE( PRTFile, "( 30X, '( RMS roughness = ', G10.3, ' m', ' )' )" ) SSP%sigma( SSP%NMedia + 1 )
     END IF
 
     HSBot%BC = BotOpt( 1 : 1 )
@@ -126,12 +106,10 @@ CONTAINS
 
     ! Read phase speed limits
     READ(  ENVFile, *    ) cLow, cHigh                 ! Spectral limits (m/s)
-    WRITE( PRTFile, "( /, ' cLow = ', G12.5, ' m/s      cHigh = ', G12.5, ' m/s' )" ) cLow, cHigh
     IF ( cLow >= cHigh ) CALL ERROUT( 'GetPar', 'Need phase speeds cLow < cHigh'  )
 
     ! Read maximum range
     READ(  ENVFile, * ) RMax          ! Maximum range for calculations (km)
-    WRITE( PRTFile, "( ' RMax = ', G12.5, ' km' )" ) RMax
     IF ( RMax < 0.0 ) CALL ERROUT( ' ', 'RMax must be non-negative'  )
 
     RETURN
@@ -206,14 +184,9 @@ CONTAINS
     CASE ( 'T' )
        WRITE( PRTFile, * ) '    THORP volume attenuation added'
     CASE ( 'F' )
-       WRITE( PRTFile, * ) '    Francois-Garrison volume attenuation added'
        READ(  ENVFile, * ) T, Salinity, pH, z_bar
-       WRITE( PRTFile, "( 7x, ' T = ', F4.1, ' degrees   S = ', F4.1, ' psu   pH = ', F4.1, '   z_bar = ', F6.1, ' m' )" ) &
-            T, Salinity, pH, z_bar
     CASE ( 'B' )
-       WRITE( PRTFile, * ) '    Biological attenuation'
        READ( ENVFile, *  ) NBioLayers
-       WRITE( PRTFile, * ) '      Number of Bio Layers = ', NBioLayers
        IF ( NBioLayers > MaxBioLayers ) THEN
           CALL ERROUT( 'READIN', 'Too many biolayers' )
           WRITE( PRTFile, * ) 'MaxBioLayers = ', MaxBioLayers
@@ -278,7 +251,6 @@ CONTAINS
     CASE ( 'A' )                   !  Half-space properties
        zTemp = 0.0
        READ(  ENVFile, *    ) zTemp, alphaR, betaR, rhoR, alphaI, betaI
-       WRITE( PRTFile, FMT="( F10.2, 3X, 2F10.2, 3X, F6.2, 3X, 2F10.4 )" ) zTemp, alphaR, betaR, rhoR, alphaI, betaI
        HS%alphaR = alphaR
        HS%alphaI = alphaI
        HS%rho    = rhoR

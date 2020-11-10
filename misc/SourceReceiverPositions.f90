@@ -40,10 +40,6 @@ CONTAINS
     ! Broadband run?
     IF ( BroadbandOption == 'B' ) THEN
        READ( ENVFile, * ) Nfreq
-       WRITE( PRTFile, * ) '__________________________________________________________________________'
-       WRITE( PRTFile, * )
-       WRITE( PRTFile, * )
-       WRITE( PRTFile, * ) 'Number of frequencies =', Nfreq
        IF ( Nfreq <= 0 ) CALL ERROUT( 'ReadEnvironment', 'Number of frequencies must be positive'  )
     END IF
 
@@ -52,12 +48,10 @@ CONTAINS
     IF ( IAllocStat /= 0 ) CALL ERROUT( 'ReadEnvironment', 'Too many frequencies'  )
 
     IF ( BroadbandOption == 'B' ) THEN
-       WRITE( PRTFile, * ) 'Frequencies (Hz)'
        freqVec( 3 ) = -999.9
        READ(  ENVFile, * ) freqVec( 1 : Nfreq )
        CALL SubTab( freqVec, Nfreq )
 
-       WRITE( PRTFile, "( 5G14.6 )" ) ( freqVec( ifreq ), ifreq = 1, MIN( Nfreq, Number_to_Echo ) )
        IF ( Nfreq > Number_to_Echo ) WRITE( PRTFile,  "( G14.6 )" ) ' ... ', freqVec( Nfreq )
     ELSE
        freqVec( 1 ) = freq0
@@ -130,14 +124,6 @@ CONTAINS
        WRITE( PRTFile, * ) 'Warning in ReadSzRz : Receiver below or too near the bottom bdry has been moved up'
     END IF
 
-!!$    IF ( .NOT. monotonic( Pos%sz, Pos%NSz ) ) THEN
-!!$       CALL ERROUT( 'SzRzRMod', 'Source depths are not monotonically increasing' )
-!!$    END IF 
-!!$ 
-!!$    IF ( .NOT. monotonic( Pos%rz, Pos%NRz ) ) THEN
-!!$       CALL ERROUT( 'SzRzRMod', 'Receiver depths are not monotonically increasing' )
-!!$    END IF 
-
     RETURN
   END SUBROUTINE ReadSzRz
 
@@ -194,12 +180,7 @@ CONTAINS
     CHARACTER, INTENT( IN  ) :: Description*( * ), Units*( * )
     INTEGER                  :: ix
    
-    WRITE( PRTFile, * )
-    WRITE( PRTFile, * ) '__________________________________________________________________________'
-    WRITE( PRTFile, * )
-
     READ(  ENVFile, * ) Nx
-    WRITE( PRTFile, * ) 'Number of ' // Description // ' = ', Nx
 
     IF ( Nx <= 0 ) CALL ERROUT( 'ReadVector', 'Number of ' // Description // 'must be positive'  )
 

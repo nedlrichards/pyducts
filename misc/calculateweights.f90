@@ -1,7 +1,7 @@
 MODULE CalculateWeights
 
   ! mbp 12/2018, based on much older subroutine
-  ! Given 
+  ! Given
   !    x(*)    abscissas
   !    xTab(*) points for tabulation
   !    Nx      number of x    points

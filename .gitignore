@@ -3,3 +3,6 @@
 *.jpeg
 *.png
 *.pdf
+*.mod
+*.o
+*.so

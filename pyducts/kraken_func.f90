@@ -1,4 +1,47 @@
 PROGRAM KRAKEN
+!ReadEnvironment(freq0, MaxMedium, TopOpt, NG, BotOpt, cLow, cHigh, RMax)
+  !TYPE SSPStructure
+     !INTEGER           :: Loc( MaxMedia ), NPts( MaxMedia ), NMedia
+     !REAL     (KIND=8) :: z( MaxSSP ), alphaR( MaxSSP ), alphaI( MaxSSP ), rho( MaxSSP ), betaR( MaxSSP ), betaI( MaxSSP )
+     !REAL     (KIND=8) :: Depth( MaxMedia ), sigma( MaxMedia ), beta( MaxMedia ), fT( MaxMedia )
+     ! Begin interpolator specifications
+     !COMPLEX  (KIND=8) :: cp( MaxSSP ), cs( MaxSSP ), n2( MaxSSP ), cpSpline( 4, MaxSSP ), csSpline( 4, MaxSSP ), rhoSpline( 4, MaxSSP )
+     !COMPLEX  (KIND=8) :: cpCoef( 4, MaxSSP ), csCoef( 4, MaxSSP ), rhoCoef( 4, MaxSSP ), csWork( 4, MaxSSP )   ! for the PCHIP coefficients
+     !COMPLEX  (KIND=8) :: rhoT( MaxSSP )   ! temporary values for calling PCHIP (ordinate argument must be complex valued!)
+     !CHARACTER (LEN=1) :: Type
+     !CHARACTER (LEN=2) :: AttenUnit
+     ! End interpolator specifications
+     !CHARACTER (LEN=8) :: Material( MaxMedia )
+  !END TYPE SSPStructure
+!
+  !TYPE( SSPStructure ) :: SSP
+!
+  !TYPE HSInfo
+     !CHARACTER (LEN=1) :: BC                            ! Boundary condition type
+     !REAL     (KIND=8) :: alphaR, alphaI, betaR, betaI  ! P-wave, S-wave speeds (user units)
+     !REAL     (KIND=8) :: beta, fT                      ! power law and transition frequency
+     !COMPLEX  (KIND=8) :: cP, cS                        ! P-wave, S-wave speeds (neper/m loss)
+     !REAL     (KIND=8) :: rho, BumpDensity, eta, xi     ! density, boss parameters
+  !END TYPE
+!
+  !TYPE( HSInfo )       :: HSTop, HSBot
+
+  !TYPE Position
+     !INTEGER              :: NSx = 1, NSy = 1, NSz, NRz, NRr, Ntheta    ! number of x, y, z, r, theta coordinates
+     !REAL                 :: Delta_r, Delta_theta
+     !INTEGER, ALLOCATABLE :: iSz( : ), iRz( : )
+     !REAL,    ALLOCATABLE :: Sx( : ), Sy( : ), Sz( : )          ! Source x, y, z coordinates
+     !REAL,    ALLOCATABLE :: Rr( : ), Rz( : ), ws( : ), wr( : ) ! Receiver r, z coordinates and weights for interpolation
+     !REAL,    ALLOCATABLE :: theta( : )                         ! Receiver bearings
+  !END TYPE Position
+
+  !TYPE ( Position ) :: Pos   ! structure containing source and receiver positions
+
+  !TYPE ReflectionCoef
+      !REAL(KIND=8) :: theta, R, phi
+  !END TYPE
+
+  !TYPE(ReflectionCoef), ALLOCATABLE :: RBot( : ), RTop( : )
 
   ! Ocean acoustic normal modes.
 
@@ -20,80 +63,96 @@ PROGRAM KRAKEN
   ! Originally developed as part of the author's dissertation under the supervision
   ! of Prof. Edward L. Reiss, Northwestern University
 
-  USE KrakenMod
+  USE MathConstants
   USE ReadEnvironmentMod
   USE SourceReceiverPositions
   USE RefCoef
   USE sspMod
   USE AttenMod
-  USE FatalError
 
   IMPLICIT NONE
+  SAVE
+
+  INTEGER,            PARAMETER :: MaxMedium = 500, NSets = 5
+  LOGICAL                       :: CountModes
+  INTEGER                       :: FirstAcoustic, LastAcoustic, NV( NSets ), ISet, M, LRecordLength, IRecProfile = 1, ModeCount, Mode, IProf, ifreq
+  REAL    (KIND=8)              :: ET( NSets ), hV( NSets ), cMin, cLow, cHigh, freq, omega, omega2, RMax
+  REAL    (KIND=8), ALLOCATABLE :: EVMat( :, : ), Extrap( :, : ), VG( : )
+  COMPLEX (KIND=8), ALLOCATABLE :: k( : )
+  CHARACTER (LEN= 8)            :: TopOpt, BotOpt
+  CHARACTER (LEN=80)            :: Title
+
+  ! finite-difference grid
+  INTEGER                       :: Loc( MaxMedium ), NG( MaxMedium ), N( MaxMedium )
+  REAL      (KIND=8)            :: h(   MaxMedium )
+
+  ! storage for finite-difference equations
+  REAL (KIND=8),    ALLOCATABLE :: B1( : ), B1C( : ), B2( : ), B3( : ), B4( : ), rho( : )
+
+
   INTEGER            :: Min_Loc( 1 ), IFirst, ILast, IRec, ii, j
   REAL               :: zMin, zMax
   REAL      (KIND=8) :: Error, freq0
-  CHARACTER (LEN=80) :: FileRoot
 
-  ! get the file root for naming all input and output files
-  ! should add some checks here ...
+  Profile: DO iProf = 1, 9999   ! Loop over a sequence of profiles
+     NV( 1 : 5 ) = [ 1, 2, 4, 8, 16 ]
 
-  CALL GET_COMMAND_ARGUMENT( 1, FileRoot )
+     Title = 'KRAKEN- '
+     CALL ReadEnvironment( FileRoot, Title, freq0, MaxMedium, TopOpt, NG, BotOpt, cLow, cHigh, RMax, ENVFile, PRTFile )
+     IF ( HSBot%BC == 'F' .OR. HSTop%BC == 'P' ) &
+        CALL ERROUT( 'KRAKEN', 'The option to read a file for the reflection loss is not implemented in KRAKEN' )
+     zMin = SNGL( SSP%Depth( 1              ) )
+     zMax = SNGL( SSP%Depth( SSP%NMedia + 1 ) )
+     CALL ReadSzRz(    zMin, zMax )   ! Read source/receiver depths
+     CALL ReadfreqVec( freq0, TopOpt( 6 : 6 ) )
 
-    NV( 1 : 5 ) = [ 1, 2, 4, 8, 16 ]
+     IF ( iProf == 1 ) CALL ReadReflectionCoefficient( FileRoot, HSBot%BC, HSTop%BC, PRTFile )
 
-    Title = 'KRAKEN- '
-    CALL ReadEnvironment( FileRoot, Title, freq0, MaxMedium, TopOpt, NG, BotOpt, cLow, cHigh, RMax, ENVFile, PRTFile )
-    IF ( HSBot%BC == 'F' .OR. HSTop%BC == 'P' ) &
-    CALL ERROUT( 'KRAKEN', 'The option to read a file for the reflection loss is not implemented in KRAKEN' )
-    zMin = SNGL( SSP%Depth( 1              ) )
-    zMax = SNGL( SSP%Depth( SSP%NMedia + 1 ) )
-    CALL ReadSzRz(    zMin, zMax )   ! Read source/receiver depths
-    CALL ReadfreqVec( freq0, TopOpt( 6 : 6 ) )
+     FreqLoop: DO ifreq = 1, Nfreq
+        freq   = freqVec( ifreq )
+        omega  = 2.0D0 * pi * freq
+        omega2 = omega ** 2
 
-    IF ( iProf == 1 ) CALL ReadReflectionCoefficient( FileRoot, HSBot%BC, HSTop%BC, PRTFile )
-
-    FreqLoop: DO ifreq = 1, Nfreq
-    freq   = freqVec( ifreq )
-    omega  = 2.0D0 * pi * freq
-    omega2 = omega ** 2
-
-    CALL UpdateSSPLoss( freq, freq0 )
-    CALL UpdateHSLoss(  freq, freq0 )
-
-    DO ISet = 1, NSets   ! Main loop: solve the problem for a sequence of meshes
-        N( 1 : SSP%NMedia ) = NG( 1 : SSP%NMedia ) * NV( ISet ) * freq / freq0   ! scaled by frequency
-        h( 1 : SSP%NMedia ) = ( SSP%Depth( 2 : SSP%NMedia + 1 ) - SSP%Depth( 1 : SSP%NMedia ) ) / N( 1 : SSP%NMedia )
-        hV( ISet )      = h( 1 )
-        CALL Solve
-
-        IF ( Error * 1000.0 * RMax < 1.0 ) THEN   ! Convergence achieved
-            EXIT
-        ELSE
-            IF ( ISet == NSets ) WRITE( PRTFile, * ) 'Warning in KRAKEN : Too many meshes needed: check convergence'
+        IF ( Nfreq > 1 ) THEN
+           CALL FLUSH( PRTFile )
         END IF
-    END DO
 
-    ! Solution complete: discard modes with phase velocity above cHigh
+        CALL UpdateSSPLoss( freq, freq0 )
+        CALL UpdateHSLoss(  freq, freq0 )
 
-    Min_Loc = MINLOC( Extrap( 1, 1 : M ), Extrap( 1, 1 : M ) > omega2 / cHigh ** 2 )
-    M       = Min_Loc( 1 )
+        DO ISet = 1, NSets   ! Main loop: solve the problem for a sequence of meshes
+           N( 1 : SSP%NMedia ) = NG( 1 : SSP%NMedia ) * NV( ISet ) * freq / freq0   ! scaled by frequency
+           h( 1 : SSP%NMedia ) = ( SSP%Depth( 2 : SSP%NMedia + 1 ) - SSP%Depth( 1 : SSP%NMedia ) ) / N( 1 : SSP%NMedia )
+           hV( ISet )      = h( 1 )
+           CALL Solve
 
-    ! k() contains scatter losses; Extrap contains extrapolated values of wavenumbers, so combine ...
-    k( 1 : M ) = SQRT( Extrap( 1, 1 : M ) + k( 1 : M ) )
+           IF ( Error * 1000.0 * RMax < 1.0 ) THEN   ! Convergence achieved
+              EXIT
+           ELSE
+              IF ( ISet == NSets ) WRITE( PRTFile, * ) 'Warning in KRAKEN : Too many meshes needed: check convergence'
+           END IF
+        END DO
 
-    WRITE( MODFile, REC = IRecProfile ) M
+        ! Solution complete: discard modes with phase velocity above cHigh
+        Min_Loc = MINLOC( Extrap( 1, 1 : M ), Extrap( 1, 1 : M ) > omega2 / cHigh ** 2 )
+        M       = Min_Loc( 1 )
 
-    IFirst = 1
-    DO IREC = 1, 1 + ( 2 * M - 1 ) / LRecordLength
-        ILast  = MIN( M, IFirst + LRecordLength / 2 - 1 )
-        WRITE( MODFile, REC = IRecProfile + 1 + M + IREC ) CMPLX( k( IFirst : ILast ) )
-        IFirst = ILast + 1
-    END DO
+        ! k() contains scatter losses; Extrap contains extrapolated values of wavenumbers, so combine ...
+        k( 1 : M ) = SQRT( Extrap( 1, 1 : M ) + k( 1 : M ) )
 
-    ! set record pointer to beginning of next mode set
-    IRecProfile = IRecProfile + 3 + M + ( 2 * M - 1 ) / LRecordLength
-    END DO FreqLoop
+        WRITE( MODFile, REC = IRecProfile ) M
 
+        IFirst = 1
+        DO IREC = 1, 1 + ( 2 * M - 1 ) / LRecordLength
+           ILast  = MIN( M, IFirst + LRecordLength / 2 - 1 )
+           WRITE( MODFile, REC = IRecProfile + 1 + M + IREC ) CMPLX( k( IFirst : ILast ) )
+           IFirst = ILast + 1
+        END DO
+
+        ! set record pointer to beginning of next mode set
+        IRecProfile = IRecProfile + 3 + M + ( 2 * M - 1 ) / LRecordLength
+     END DO FreqLoop
+  END DO Profile
 
 CONTAINS
 
@@ -115,7 +174,6 @@ CONTAINS
     Loc( 1 )      = 0
 
     ! Allocate storage for finite-difference coefficients
-
     NPoints = SUM( N( 1 : SSP%NMedia ) ) + SSP%NMedia
 
     IF ( ALLOCATED( B1 ) ) DEALLOCATE( B1, B1C, B2, B3, B4, rho )
@@ -322,7 +380,7 @@ CONTAINS
        END IF
 
        ! Use the secant method to refine the eigenvalue
-       ! With large matrices one needs to allow a larger tolerance 
+       ! With large matrices one needs to allow a larger tolerance
        Tolerance = ABS( x ) * SIZE( B1 ) * 10.0D0 ** ( 1.0 - PRECISION( x ) )
 
        CALL RootFinderSecant( x, Tolerance, Iteration, MaxIteration, ErrorMessage, Funct )
@@ -408,12 +466,6 @@ CONTAINS
     INTEGER                           :: iPowerBot
     REAL    (KIND=8)                  :: f, g
     COMPLEX (KIND=8)                  :: fTop, gTop, fBot, gBot
-
-!!$  IF ( x <= omega2 / cHigh ** 2 ) THEN    ! For a k below the cts spectrum limit, force a zero
-!!$     Delta  = 0.0D0
-!!$     iPower = 0
-!!$     RETURN
-!!$  END IF
 
     modeCount = 0
 
@@ -883,7 +935,7 @@ CONTAINS
     ! Determine number of modes
 
     xMin = 1.00001D0 * omega2 / cHigh ** 2
-    
+
     CALL FUNCT( xMin, Delta, iPower )
     M = modeCount
     WRITE( PRTFile, * ) '               --- Number of modes = ', M

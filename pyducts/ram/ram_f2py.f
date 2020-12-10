@@ -3,21 +3,21 @@ c
 c     ******************************************************************
 c     ***** Range-dependent Acoustic Model, Version 1.5, 13-Sep-00 *****
 c     ******************************************************************
-c     
+c
 c     This code was developed by Michael D. Collins at the Naval
-c     Research Laboratory in Washington, DC. It solves range-dependent 
-c     ocean acoustics problems with the split-step Pade algorithm 
-c     [M. D. Collins, J. Acoust. Soc. Am. 93, 1736-1742 (1993)]. A 
-c     users guide and updates of the code are available via anonymous 
-c     ftp from ram.nrl.navy.mil. 
+c     Research Laboratory in Washington, DC. It solves range-dependent
+c     ocean acoustics problems with the split-step Pade algorithm
+c     [M. D. Collins, J. Acoust. Soc. Am. 93, 1736-1742 (1993)]. A
+c     users guide and updates of the code are available via anonymous
+c     ftp from ram.nrl.navy.mil.
 c
 c     Version 1.5 contains a correction to a bug in the dimension of
 c     quantities passed to subroutines fndrt and guerre that Laurie
-c     Fialkowski noticed. 
+c     Fialkowski noticed.
 c
 c     Version 1.4 contains a correction to a minor bug in subroutine
 c     guerre that Dave King noticed (amp1 and amp2 were declared
-c     twice) and a few other minor improvements. 
+c     twice) and a few other minor improvements.
 c
 c     Version 1.3 contains a new root-finding subroutine.
 c
@@ -26,18 +26,18 @@ c     is no longer zeroed out along the ocean bottom. This was done in
 c     previous versions so that the ocean bottom would be highlighted
 c     in graphical displays. The graphics codes ramclr, ramctr, and
 c     ramcc read in the bathymetry from ram.in and plot the ocean
-c     bottom directly. 
+c     bottom directly.
 c
 c     Version 1.1 contains two improvements:
 c
-c     (1) An improved self starter. Stability is improved by using the 
-c     factor (1-X)**2 instead of (1+X)**2 to smooth the delta function. 
+c     (1) An improved self starter. Stability is improved by using the
+c     factor (1-X)**2 instead of (1+X)**2 to smooth the delta function.
 c     The factor (1+X)**2 is nearly singular for some problems involving
-c     deep water and/or weak attenuation. Numerical problems associated 
-c     with this singularity were detected by Eddie Scheer of Woods Hole 
-c     Oceanographic Institute. 
+c     deep water and/or weak attenuation. Numerical problems associated
+c     with this singularity were detected by Eddie Scheer of Woods Hole
+c     Oceanographic Institute.
 c
-c     (2) Elimination of underflow problems. A very small number is 
+c     (2) Elimination of underflow problems. A very small number is
 c     added to the solution in subroutine solve to prevent underflow,
 c     which can adversely affect run time on some computers. This
 c     improvement was suggested by Ed McDonald of the SACLANT Undersea
@@ -54,8 +54,9 @@ c
      >   v(mz),tlg(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
      >   s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
 c
-      open(unit=2,status='unknown',file='tl.line')
-      open(unit=3,status='unknown',file='tl.grid',form='unformatted')
+c     open(unit=1,status='old',file='ram.in')
+c     open(unit=2,status='unknown',file='tl.line')
+c     open(unit=3,status='unknown',file='tl.grid',form='unformatted')
 c
       call setup(mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,
      >   dz,pi,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs,rb,zb,cw,cb,rhob,
@@ -66,16 +67,17 @@ c
 c
 c     March the acoustic field out in range.
 c
-    1 call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,eta,omega,rmax,c0,k0,ci,r,
-     >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
-     >   r1,r2,r3,s1,s2,s3,pd1,pd2)
-      call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
-      r=r+dr
-      call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
-      if(r.lt.rmax)go to 1
+c   1 call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,eta,omega,rmax,c0,k0,ci,r,
+c    >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
+c    >   r1,r2,r3,s1,s2,s3,pd1,pd2)
+c     call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+c     r=r+dr
+c     call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
+c     if(r.lt.rmax)go to 1
 c
-      close(2)
-      close(3)
+      close(1)
+c     close(2)
+c     close(3)
 c
       stop
       end
@@ -91,11 +93,11 @@ c
 c
 c     Initialize the parameters, acoustic field, and matrices.
 c
-
-cf2py intent(out) freq,zs,zr,rmax,dr,ndr,zmax,dz,ndz,nzplt,zmplt,c0,np,ns,rs
-cf2py intent(out) pi,ci,eta,eps,omega,rb,zb,cw,cb,rhob,attn,alpw,alpb
-cf2py intent(out) ib,mdr,r,ir,dir,k0,nz,iz,r1,r2,r3,u,v,lz
-
+cf2py intent(in) mr,mz,mp
+cf2py intent(out) nz,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
+cf2py intent(out) dir,dr,dz,pi,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs
+cf2py intent(out) rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb
+cf2py intent(out) f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2,tlg
 c
 
       open(unit=1,status='old',file='ram.in')
@@ -118,7 +120,6 @@ c
       ci=cmplx(0.0,1.0)
       eta=1.0/(40.0*pi*alog10(exp(1.0)))
       eps=1.0e-20
-
       ib=1
       mdr=0
       r=dr
@@ -168,7 +169,7 @@ c
      >   alpw,alpb,ksqw,ksqb)
       call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,pi,c0,k0,rhob,alpw,alpb,ksq,
      >   ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
-      call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
+c     call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
 c
 c     The propagation matrices.
 c
@@ -176,22 +177,26 @@ c
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
-
       close(1)
       return
       end
+
+      subroutine profl(mz,nz,ci,dz,eta,omega,rmax,c0,k0,rp,cw,cb,rhob,
+     >   attn,alpw,alpb,ksqw,ksqb)
 c
 c     Set up the profiles.
 c
-      subroutine profl(mz,nz,ci,dz,eta,omega,rmax,c0,k0,rp,cw,cb,rhob,
-     >   attn,alpw,alpb,ksqw,ksqb)
       complex ci,ksqb(mz)
       real k0,cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz)
+c
+cf2py intent(in) mz,nz,ci,dz,eta,omega,rmax,c0,k0
+cf2py intent(out) rp,cw,cb,rhob,attn,alpw,alpb,ksqw,ksqb
 c
       call zread(mz,nz,dz,cw)
       call zread(mz,nz,dz,cb)
       call zread(mz,nz,dz,rhob)
       call zread(mz,nz,dz,attn)
+
       rp=2.0*rmax
       read(1,*,end=1)rp
 c
@@ -204,11 +209,15 @@ c
 c
       return
       end
+
+      subroutine zread(mz,nz,dz,prof)
 c
 c     Profile reader and interpolator.
 c
-      subroutine zread(mz,nz,dz,prof)
       real prof(mz)
+c
+cf2py intent(in) mz,nz,dz
+cf2py intent(out) prof
 c
       do 1 i=1,nz+2
       prof(i)=-1.0
@@ -239,14 +248,15 @@ c
 c
       return
       end
-c
-c     The tridiagonal matrices.
-c
+
       subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,
      >   ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       complex d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
      >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
       real k0,rhob(mz),f1(mz),f2(mz),f3(mz),alpw(mz),alpb(mz),ksqw(mz)
+c
+c     The tridiagonal matrices.
+c
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -503,6 +513,10 @@ c
       real*4 k0,c0,dr
       parameter (m=40)
       dimension bin(m,m),a(m,m),b(m),dg(m),dh1(m),dh2(m),dh3(m),fact(m)
+
+cf2py intent(in) mp,np,ns,ip,k0,c0
+cf2py intent(out) pd1,pd2
+
       pi=4.0d0*datan(1.0d0)
       ci=dcmplx(0.0d0,1.0d0)
       sig=k0*dr

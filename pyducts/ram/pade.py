@@ -5,39 +5,90 @@ from roots import cmplx_roots_gen
 from scipy.special import binom, factorial
 from scipy.linalg import solve
 
-class Enviornment:
-    """Basic enviornment for RAM run"""
-    def __init__(self, ns=1, np=8):
-        """setup common parameters for all ranges"""
-        self.facous = facous  # acoustic frequency, Hz
-        self.z_src = z_src  # source depth, m
-        self.z_rcr = z_rcr  # receiver depth used for tl.line, m
-        self.rmax = rmax  # max range of computed pressure, m
-        self.dr = dr  # range step, m
-        self.zmax = zmax  # max depth of computed pressure, m
-        self.dz = dz  # depth step, m
-        self.c0 = c0  # reference sound speed, m/s
-        self.ns = ns  # number of stablity constraints, {1 | 2}
-        self.np = np  # number of pade terms
-        self.rs = rs  # max range of stabilty constraints
+# fortran preallocation
+mr = 1000
+mz = 80000
+mp = 30
+r1 = np.zeros(mz,mp)
+r2 = np.zeros(mz,mp)
+r3 = np.zeros(mz,mp)
+u = np.zeros(mz)
+v = np.zeros(mz)
 
-        # bottom depth in linearly interpolated between bathymetry points
-        self.rb rb  # range of bathymetry points
-        self.zb = zb  # depth of bathymetry points
+with open("ram.in", 'r') as f:
+    _ = f.readline()
+    [facous, z_src, z_rcr] = f.readline().split()
+    [rmax, dr, ndr] = f.readline().split()
+    [zmax, dz, ndz, zmplt] = f.readline().split()
+    [c0, npr, ns, rs] = f.readline().split()
 
-        # profiles are treated as discontinuities at each range
-        self.r_profiles = r_profiles
-        self.c_w = c_w  # water sound speed, m/s
-        self.c_b = c_b  # bottom sound speed, m/s
-        self.rhob = rhob  # bottom density, g/cc
-        self.attn = attn  # bottom attenuation, dB/lambda
+    # read bottom position
+    bathy = [np.array(f.readline().split()).astype(float)]
+    while bathy[-1][0] >= 0:
+        bathy.append(np.array(f.readline().split()).astype(float))
+    bottom_position = np.array(bathy[:-1])
 
-#def self_starter(
+    # read profiles one at a time
+    profile = []
+    rp = 0.0
+    while isinstance(rp, float):
+        cw = [np.array(f.readline().split()).astype(float)]
+        while cw[-1][0] >= 0:
+            cw.append(np.array(f.readline().split()).astype(float))
+        cw = np.array(cw[:-1])
 
+        cb = [np.array(f.readline().split()).astype(float)]
+        while cb[-1][0] >= 0:
+            cb.append(np.array(f.readline().split()).astype(float))
+        cb = np.array(cb[:-1])
+
+        rhob = [np.array(f.readline().split()).astype(float)]
+        while rhob[-1][0] >= 0:
+            rhob.append(np.array(f.readline().split()).astype(float))
+        rhob = np.array(rhob[:-1])
+
+        attn = [np.array(f.readline().split()).astype(float)]
+        while attn[-1][0] >= 0:
+            attn.append(np.array(f.readline().split()).astype(float))
+        attn = np.array(attn[:-1])
+
+        profile.append([rp, cw, cb, rhob, attn])
+
+        rp = f.readline().split()
+        if rp:
+            rp = float(rp[0])
+        else:
+            break
+
+    # constants defined in setup
+    eta = 1.0 / (40.0 * np.pi * np.log10(np.e))
+    eps = 1.0e-20
+    omega = 2.0*pi*freq
+    ib = 1
+    mdr = 0
+    r = dr
+    ri = 1.0 + zr / dz
+    ir = np.floor(ri)
+    dir = ri - ir
+    k0 = omega/c0
+    nz = zmax / dz - 0.5
+    nzplt = zmplt / dz - 0.5
+    z = zb(1)
+    iz = 1.0 + z / dz
+    iz = max(2, iz)
+    iz = min(nz, iz)
+    lz = int(np.floor(nzplt / ndz))
+
+    # interpolate profile to create variables used by ram
+    zaxis = np.arange(int(nz)) * dz
+    ksqw = (omega / cw) ** 2 - k0 ** 2
+    ksqb = ((omega / cb) * (1.0 + 1j * eta * attn)) ** 2 - k0 ** 2
+    alpw = np.sqrt(cw / c0)
+    alpb = np.sqrt(rhob * cb / c0)
 
 """
     def matrix_c(k0, dz):
-    """Setup diagonal matrix"""
+    #Setup diagonal matrix
       a1 = k0 ** 2 / 6.0
       a2 = 2.0 * k0 ** 2 / 3.0
       a3 = k0 ** 2 / 6.0
@@ -153,7 +204,7 @@ ip_r = 2
 dgr = np.zeros(40, dtype=np.complex)
 dh1r = np.zeros(40, dtype=np.complex)
 
-pd1r, pd2r = refpy.epade(mp_r, np_r, ns_r, ip_r, kt, 1500., drt)
-pd1, pd2 = pade_coeffs(kt, drt, mp_r, np_r, ns_r, ip_r)
+#pd1r, pd2r = refpy.epade(mp_r, np_r, ns_r, ip_r, kt, 1500., drt)
+#pd1, pd2 = pade_coeffs(kt, drt, mp_r, np_r, ns_r, ip_r)
 
-rmax,dr,ndr,dz,ndz,c0,np,ns,rs,omega,ir,dirk0,nz,nzplt,iz,rb,zb,r1,r2,u,v,lz = refpy.setup()
+#rmax,dr,ndr,dz,ndz,c0,np,ns,rs,omega,ir,dirk0,nz,nzplt,iz,rb,zb,r1,r2,u,v,lz = refpy.setup()

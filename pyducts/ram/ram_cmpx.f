@@ -54,9 +54,9 @@ c
      >   v(mz),tlg(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
      >   s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
 c
-c     open(unit=1,status='old',file='ram.in')
-c     open(unit=2,status='unknown',file='tl.line')
-c     open(unit=3,status='unknown',file='tl.grid',form='unformatted')
+      open(unit=1,status='old',file='ram.in')
+      open(unit=2,status='unknown',file='tl.line')
+      open(unit=3,status='unknown',file='tl.grid',form='unformatted')
 c
       call setup(mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,
      >   dz,pi,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs,rb,zb,cw,cb,rhob,
@@ -67,21 +67,23 @@ c
 c
 c     March the acoustic field out in range.
 c
-c   1 call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,eta,omega,rmax,c0,k0,ci,r,
-c    >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
-c    >   r1,r2,r3,s1,s2,s3,pd1,pd2)
-c     call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
-c     r=r+dr
-c     call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
-c     if(r.lt.rmax)go to 1
+    1 call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,eta,omega,rmax,c0,k0,ci,r,
+     >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
+     >   r1,r2,r3,s1,s2,s3,pd1,pd2)
+      call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+      r=r+dr
+      call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
+      if(r.lt.rmax)go to 1
 c
       close(1)
-c     close(2)
-c     close(3)
+      close(2)
+      close(3)
 c
       stop
       end
-
+c
+c     Initialize the parameters, acoustic field, and matrices.
+c
       subroutine setup(mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
      >   dir,dr,dz,pi,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs,rb,zb,cw,cb,
      >   rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,
@@ -91,21 +93,14 @@ c
       real k0,rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),
      >   alpb(mz),f1(mz),f2(mz),f3(mz),ksqw(mz),tlg(mz)
 c
-c     Initialize the parameters, acoustic field, and matrices.
-c
-cf2py intent(in) mr,mz,mp
-cf2py intent(out) nz,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
-cf2py intent(out) dir,dr,dz,pi,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs
-cf2py intent(out) rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb
-cf2py intent(out) f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2,tlg
-c
-
-      open(unit=1,status='old',file='ram.in')
       read(1,*)
       read(1,*)freq,zs,zr
       read(1,*)rmax,dr,ndr
       read(1,*)zmax,dz,ndz,zmplt
       read(1,*)c0,np,ns,rs
+
+C     mbp: adding grid size info to the TL output file
+C      write( 3 ) dz, ndz, zmplt, dr, ndr, rmax, freq, zs
 
 c
       i=1
@@ -161,6 +156,9 @@ c
       do 5 i=ndz,nzplt,ndz
       lz=lz+1
     5 continue
+c     write(3)lz
+c     header containing a more detailed description of the problem (jcp)
+      write(3) freq,zs,zr,rmax,dr,ndr,zmax,dz,ndz,zmplt,c0,np,ns,rs,lz
 
 c
 c     The initial profiles and starting field.
@@ -169,7 +167,7 @@ c
      >   alpw,alpb,ksqw,ksqb)
       call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,pi,c0,k0,rhob,alpw,alpb,ksq,
      >   ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
-c     call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
+      call outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
 c
 c     The propagation matrices.
 c
@@ -177,26 +175,20 @@ c
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
-      close(1)
       return
       end
-
-      subroutine profl(mz,nz,ci,dz,eta,omega,rmax,c0,k0,rp,cw,cb,rhob,
-     >   attn,alpw,alpb,ksqw,ksqb)
 c
 c     Set up the profiles.
 c
+      subroutine profl(mz,nz,ci,dz,eta,omega,rmax,c0,k0,rp,cw,cb,rhob,
+     >   attn,alpw,alpb,ksqw,ksqb)
       complex ci,ksqb(mz)
       real k0,cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz)
-c
-cf2py intent(in) mz,nz,ci,dz,eta,omega,rmax,c0,k0
-cf2py intent(out) rp,cw,cb,rhob,attn,alpw,alpb,ksqw,ksqb
 c
       call zread(mz,nz,dz,cw)
       call zread(mz,nz,dz,cb)
       call zread(mz,nz,dz,rhob)
       call zread(mz,nz,dz,attn)
-
       rp=2.0*rmax
       read(1,*,end=1)rp
 c
@@ -209,15 +201,11 @@ c
 c
       return
       end
-
-      subroutine zread(mz,nz,dz,prof)
 c
 c     Profile reader and interpolator.
 c
+      subroutine zread(mz,nz,dz,prof)
       real prof(mz)
-c
-cf2py intent(in) mz,nz,dz
-cf2py intent(out) prof
 c
       do 1 i=1,nz+2
       prof(i)=-1.0
@@ -248,20 +236,14 @@ c
 c
       return
       end
-
+c
+c     The tridiagonal matrices.
+c
       subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,
      >   ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       complex d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
      >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
       real k0,rhob(mz),f1(mz),f2(mz),f3(mz),alpw(mz),alpb(mz),ksqw(mz)
-c
-cf2py intent(in) mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw
-cf2py intent(in) ksqb,pd1,pd2
-cf2py intent(out) f1,f2,f3,r1,r2,r3,s1,s2,s3
-c
-c
-c     The tridiagonal matrices.
-c
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -362,17 +344,12 @@ c
 c
       return
       end
-
-      subroutine solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
-      complex u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
-     >   s2(mz,mp),s3(mz,mp)
-c
-cf2py intent(in) mz,nz,mp,np,iz,r1,r2,r3,s1,s2,s3
-cf2py intent(out) u,v
 c
 c     The tridiagonal solver.
 c
-
+      subroutine solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+      complex u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
+     >   s2(mz,mp),s3(mz,mp)
       eps=1.0e-30
 c
       do 6 j=1,np
@@ -489,12 +466,14 @@ c
 c     Output transmission loss.
 c
       subroutine outpt(mz,mdr,ndr,ndz,iz,nzplt,lz,ir,dir,eps,r,f3,u,tlg)
-      complex ur,u(mz)
+      complex ur,u(mz),pout,poutg(mz)
       real f3(mz),tlg(mz)
 c
       ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
+      pout=ur/sqrt(r+eps)
       tl=-20.0*alog10(cabs(ur)+eps)+10.0*alog10(r+eps)
-      write(2,*)r,tl
+c     write(2,*)r,tl
+      write(2,*)r,pout
 c
       mdr=mdr+1
       if(mdr.eq.ndr)then
@@ -504,9 +483,11 @@ c
       do 1 i=ndz,nzplt,ndz
       ur=u(i)*f3(i)
       j=j+1
-      tlg(j)=-20.0*alog10(cabs(ur)+eps)+10.0*alog10(r+eps)
+c     tlg(j)=-20.0*alog10(cabs(ur)+eps)+10.0*alog10(r+eps)
+      poutg(j)=ur/sqrt(r+eps)
     1 continue
-      write(3)(tlg(j),j=1,lz)
+c     write(3)(tlg(j),j=1,lz)
+      write(3)(poutg(j),j=1,lz)
       end if
 c
       return
@@ -523,10 +504,6 @@ c
       real*4 k0,c0,dr
       parameter (m=40)
       dimension bin(m,m),a(m,m),b(m),dg(m),dh1(m),dh2(m),dh3(m),fact(m)
-
-cf2py intent(in) mp,np,ns,ip,k0,c0
-cf2py intent(out) pd1,pd2
-
       pi=4.0d0*datan(1.0d0)
       ci=dcmplx(0.0d0,1.0d0)
       sig=k0*dr

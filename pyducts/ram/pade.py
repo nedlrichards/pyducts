@@ -9,18 +9,20 @@ from scipy.linalg import solve
 mr = 1000
 mz = 80000
 mp = 30
-r1 = np.zeros(mz,mp)
-r2 = np.zeros(mz,mp)
-r3 = np.zeros(mz,mp)
+r1 = np.zeros((mz,mp))
+r2 = np.zeros((mz,mp))
+r3 = np.zeros((mz,mp))
 u = np.zeros(mz)
 v = np.zeros(mz)
+pd1 = np.zeros(mp, dtype=np.complex128)
+pd2 = np.zeros(mp, dtype=np.complex128)
 
 with open("ram.in", 'r') as f:
     _ = f.readline()
-    [facous, z_src, z_rcr] = f.readline().split()
-    [rmax, dr, ndr] = f.readline().split()
-    [zmax, dz, ndz, zmplt] = f.readline().split()
-    [c0, npr, ns, rs] = f.readline().split()
+    [facous, z_src, z_rcr] = np.array(f.readline().split()).astype(float)
+    [rmax, dr, ndr] = np.array(f.readline().split()).astype(float)
+    [zmax, dz, ndz, zmplt] = np.array(f.readline().split()).astype(float)
+    [c0, npr, ns, rs] = np.array(f.readline().split()).astype(float)
 
     # read bottom position
     bathy = [np.array(f.readline().split()).astype(float)]
@@ -63,28 +65,48 @@ with open("ram.in", 'r') as f:
     # constants defined in setup
     eta = 1.0 / (40.0 * np.pi * np.log10(np.e))
     eps = 1.0e-20
-    omega = 2.0*pi*freq
+    omega = 2.0 * np.pi * facous
     ib = 1
     mdr = 0
     r = dr
-    ri = 1.0 + zr / dz
+    ri = 1.0 + z_rcr / dz
     ir = np.floor(ri)
     dir = ri - ir
     k0 = omega/c0
     nz = zmax / dz - 0.5
     nzplt = zmplt / dz - 0.5
-    z = zb(1)
-    iz = 1.0 + z / dz
+    iz = 1.0 + bottom_position[0, 0] / dz
     iz = max(2, iz)
     iz = min(nz, iz)
     lz = int(np.floor(nzplt / ndz))
 
     # interpolate profile to create variables used by ram
     zaxis = np.arange(int(nz)) * dz
+
+    if cw.shape[0] == 1:
+        cw_grid = np.full_like(zaxis, cw[0, 1])
+    if cb.shape[0] == 1:
+        cb_grid = np.full_like(zaxis, cb[0, 1])
+
     ksqw = (omega / cw) ** 2 - k0 ** 2
     ksqb = ((omega / cb) * (1.0 + 1j * eta * attn)) ** 2 - k0 ** 2
     alpw = np.sqrt(cw / c0)
     alpb = np.sqrt(rhob * cb / c0)
+
+    # insert source into pressure field
+    dis_src = z_src / dz
+    src_i = int(dis_src)
+    rem_src = dis_src - src_i
+    u[src_i] = (1.0 - rem_src) * np.sqrt(2.0 * np.pi / k0) / (dz * alpw[src_i])
+    u[src_i + 1] = rem_src * np.sqrt(2.0 * np.pi / k0) / (dz * alpw[src_i])
+
+    # Divide the delta function by (1-X)**2 to get a smooth rhs.
+
+    pd1[0] = 0.0
+    pd2[0] = -1.0
+
+    f1,f2,f3,r1,r2,r3,s1,s2,s3  = rampy.matrc(mz,nz,mp,1,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,pd1,pd2)
+
 
 """
     def matrix_c(k0, dz):

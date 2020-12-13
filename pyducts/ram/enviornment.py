@@ -8,31 +8,46 @@ class Enviornment:
         self.z_src = None
         self.r_axis = None
         self.z_axis = None
-        self.bottom_position = None
+        self.layers = []
 
     def read_ram_in(self, file_name):
         """Read ram.in"""
 
         with open(file_name, 'r') as f:
             _ = f.readline()
-            [facous, z_src, z_rcr] = f.readline().split()
+            [facous, z_src, z_rcr] = np.array(f.readline().split()).astype(float)
             self.z_src = z_src
-            [rmax, dr, ndr] = f.readline().split()
+            [rmax, dr, ndr] = np.array(f.readline().split()).astype(float)
             self.r_axis = np.arange(np.ceil(rmax / dr)) * dr
-            [zmax, dz, ndz, zmplt] = f.readline().split()
+            [zmax, dz, ndz, zmplt] = np.array(f.readline().split()).astype(float)
             self.z_axis = np.arange(np.ceil(zmax / dz)) * dz
-            [c0, npr, ns, rs] = f.readline().split()
+            [c0, npr, ns, rs] = np.array(f.readline().split()).astype(float)
 
             # read bottom position
             bathy = [np.array(f.readline().split()).astype(float)]
             while bathy[-1][0] >= 0:
                 bathy.append(np.array(f.readline().split()).astype(float))
-            self.bottom_position = np.array(bathy[:-1])
+            bottom_position = np.array(bathy[:-1])
+
+            # ram assumes two layers, one water and one bottom
+            rzw = np.concatenate([bottom_position[:, 0][:, None],
+                                  np.zeros((2, 1)),
+                                  bottom_position[:, 1][:, None]],
+                                  axis=1)
+            water_layer = Layer(rzw)
+
+            # have bottom layer cover entire grid, rely on layer order to
+            # insert water layer where it is defined
+            rzw = np.array([0., 0., zmax])
+            bottom_layer = Layer(rzw)
+
+            self.layers.append(water_layer)
+            self.layers.append(bottom_layer)
 
             # read profiles one at a time
             profiles = []
             rp = 0.0
-            while isinstance(rp, float):
+            while rp < rmax:
                 cw = [np.array(f.readline().split()).astype(float)]
                 while cw[-1][0] >= 0:
                     cw.append(np.array(f.readline().split()).astype(float))
@@ -52,8 +67,48 @@ class Enviornment:
                 while attn[-1][0] >= 0:
                     attn.append(np.array(f.readline().split()).astype(float))
                 attn = np.array(attn[:-1])
+                # attn is assumed zero if not specified at z=0
+                if attn[0, 0] > 0:
+                    attn = np.concatenate([np.zeros((1, 2)), attn])
+
+                self.layers[0].add_profile(rp, cw)
+                self.layers[1].add_profile(rp, cb, rho_l=rhob, ap_l=attn)
+
                 rp = f.readline().split()
-            return cw, cb, rhob, attn
+                if rp:
+                    rp = float(rp[0])
+                else:
+                    break
+
+
+class Layer:
+    """A medium with smoothly varing properties"""
+    def __init__(self, rzw_l):
+        """initialize layer with continous material properties"""
+        # 3xN dimensional array, range, z origin, and width of layer
+        self.rzw_l = rzw_l
+        self.p_range = []
+        self.properties = []
+
+    def add_profile(self, range_profile, cp_l, cs_l=None, rho_l=1e3,
+                    ap_l=0., as_l=None):
+        """Add properties to layer, specified as a vertical profile"""
+        # Following properties may be scalar, or 2xN specified as:
+        # depth from layer origin (m)
+        # property value
+        #
+        # cp_l: compressional sound speed in layer (m/s)
+        # rho_l: density in layer (kg / m^3)
+        # ap_l: compressional attenuation
+        # cs_l: shear sound speed in layer (m/s)
+        # as_l: shear attenuation
+
+        self.p_range.append(range_profile)
+        self.properties.append([cp_l, rho_l, ap_l, cs_l, as_l])
+
+    def populate_grid(self, acoustic_property, raxis, zaxis, grided_data=None):
+        """interpolate an acoustic property to a (r, z) grid"""
+
 
 class Profile:
     """Define properties at a single range value"""
@@ -79,13 +134,4 @@ class Profile:
         self.rho_hs = rho_hs
         self.attn_hs = attn_hs
 
-class Layer:
-    """A medium with smoothly varing properties"""
-    def __init__(self, width_l, z_l, cp_l, cs_l, rho_l, attn_l):
-        """initialize layer with material properties"""
-        self.width_l = width_l
-        self.z_l = z_l
-        self.cp_l = cp_l
-        self.cs_l = cs_l
-        self.rho_l = rho_l
-        self.atten_l = atten_l
+

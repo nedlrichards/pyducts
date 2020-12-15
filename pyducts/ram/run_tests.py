@@ -1,14 +1,27 @@
 import numpy as np
+import shutil
+from subprocess import check_output
+from ram_wrapper import read_line, read_grid
 
-import refpy
+ram_exe = '/home/nedrichards/bin/ram.exe'
+ram_typed_exe = '/home/nedrichards/bin/ram_typed.exe'
 
-mr = 1000
-mz = 80000
-mp = 30
+# run example from RAM documentation
+shutil.copy('./tests/readme.in', 'ram.in')
+rout = check_output(ram_exe)
 
-(nz,np_r,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,dir_r,dr,dz,pi,eta,eps,
- omega,rmax,c0,k0,ci,r,rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,
- ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2,tlg) = refpy.setup(mr,mz,mp)
+# load transmission loss from tl.line
+r, tl = read_line("tl.line")
+rg, zg, tlg = read_grid("tl.grid", num_bytes=4)
 
-tl = -20.0 * np.log10(np.abs(f3 * u) + eps) + 10.0 * np.log10(r + eps)
+# compare with typed ram output
+rout = check_output(ram_typed_exe)
+r_t, tl_t = read_line("tl.line")
+rg_t, zg_t, tlg_t = read_grid("tl.grid", num_bytes=8)
+
+# typing changes tl by a bit, put absolute threshold on accuracy
+eps = 1e-2
+assert(eps > np.max(np.abs(tl-tl_t)))
+assert(eps > np.max(np.abs(tlg-tlg_t)))
+
 

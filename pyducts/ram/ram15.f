@@ -458,14 +458,6 @@ c
 c     Apply the operator (1-X)**2*(1+X)**(-1/4)*exp(ci*k0*r*sqrt(1+X)).
 c
       call epade(mp,np,ns,2,k0,c0,dr,pd1,pd2)
-      write(*,*)pd2(1)
-      write(*,*)pd2(2)
-      write(*,*)pd2(3)
-      write(*,*)pd2(4)
-      write(*,*)pd2(5)
-      write(*,*)pd2(6)
-      write(*,*)pd2(7)
-      write(*,*)pd2(8)
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)

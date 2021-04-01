@@ -44,75 +44,86 @@ c     improvement was suggested by Ed McDonald of the SACLANT Undersea
 c     Research Centre.
 c
       implicit none
-      complex*16 ksq,ksqb,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2
-      real*8 k0,ksqw,rb,zb,cw,cb,rhob,attn,alpw,alpb,f1,f2,f3,
-     >   dir,dr,dz,omega,rmax,c0,r,rp,rs
+      integer*8 mr,mz,nz,mp,nmp,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir
+      complex*16 ksq,ksqb,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2,pout,poutg
+      real*8 deir,dr,dz,omega,rmax,c0,k0,r,rp,rs
+      real*8 rb,zb,cw,cb,rhob,attn,alpw,alpb,ksqw,f1,f2,f3
 c
 c     mr=bathymetry points, mz=depth grid, mp=pade terms.
 c
-      integer*8 mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir
-      parameter (mr=1000,mz=80000,mp=30)
-
+      parameter (mr=1000,mz=80000,mp=20)
       dimension rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),
      >   alpb(mz),f1(mz),f2(mz),f3(mz),ksq(mz),ksqw(mz),ksqb(mz),u(mz),
      >   v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
-     >   s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+     >   s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp),poutg(mz)
 c
-c     open(unit=1,status='old',file='ram.in')
 c     open(unit=2,status='unknown',file='tl.line')
 c     open(unit=3,status='unknown',file='tl.grid',form='unformatted')
 c
-      call setup(mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,
-     >   dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,
+      call setup(mr,mz,nz,mp,nmp,ns,ndr,ndz,iz,nzplt,lz,ib,ir,deir,
+     >   dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,
      >   attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,
      >   pd1,pd2)
+c
 c     March the acoustic field out in range.
 c
-c   1 call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,r,
-c    >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
-c    >   r1,r2,r3,s1,s2,s3,pd1,pd2)
-c     call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
-c     r=r+dr
-c     call outpt(mz,mdr,ndr,ndz,nzplt,lz,ir,dir,r,f3,u,tlg)
-c     if(r.lt.rmax)go to 1
+      mdr=0
+    1 call updat(mr,mz,nz,mp,nmp,iz,ib,dr,dz,omega,rmax,c0,k0,r,
+     >   rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,
+     >   r1,r2,r3,s1,s2,s3,pd1,pd2)
+      call solve(mz,nz,mp,nmp,iz,u,v,r1,r2,r3,s1,s2,s3)
+      r=r+dr
+
+      call outln(mz,ir,deir,r,f3,u,pout)
+
+      mdr=mdr+1
+      if(mdr.eq.ndr)then
+      mdr=0
+      call outgr(mz,ndz,nzplt,lz,r,f3,u,poutg)
+      end if
+
+      if(r.lt.rmax)go to 1
 c
-      close(1)
+
 c     close(2)
 c     close(3)
 c
       stop
       end
 
-      subroutine setup(mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
-     >   dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,
+      subroutine setup(mr,mz,nz,mp,nmp,ns,ndr,ndz,iz,nzplt,lz,ib,ir,
+     >   deir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,
      >   rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,
      >   s3,pd1,pd2)
-      implicit none
-      integer*8 mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
-     >   i,j
-      real*8 dir,dr,dz,pi,eta,eps,omega,rmax,c0,k0,r,rp,rs,rb(mr),
-     >   zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),
-     >   alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz),
-     >   freq,ri,z,zmax,zmplt,zr,zs
-      complex*16 ci,u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
-
 c
 c     Initialize the parameters, acoustic field, and matrices.
 c
-cf2py intent(in) mr,mz,mp
-cf2py intent(out) nz,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir,
-cf2py intent(out) dir,dr,dz,eta,eps,omega,rmax,c0,k0,ci,r,rp,rs
-cf2py intent(out) rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb
-cf2py intent(out) f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2
+      implicit none
+      integer*8 mr,mz,nz,mp,nmp,ns,ndr,ndz,iz,nzplt,lz,ib,ir,i,j
+      real*8 deir,dr,dz,pi,eps,omega,rmax,c0,k0,r,rp,rs,z,zs,
+     >   zmax,ri,freq,zmplt,zr,rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),
+     >   attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
+      complex*16 ci,u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
+     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp),
+     >   pout,poutg(mz)
 c
+cf2py intent(in) mr,mz,mp
+cf2py intent(out) nz,nmp,ns,ndr,ndz,iz,nzplt,lz,ib,ir
+cf2py intent(out) deir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb
+cf2py intent(out) rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v
+cf2py intent(out) r1,r2,r3,s1,s2,s3,pd1,pd2
+c
+      ci=cmplx(0.0,1.0,8)
+      eps=1.0e-20
+      pi=3.1415926535897932384626433832795d0
 
       open(unit=1,status='old',file='ram.in')
+
       read(1,*)
       read(1,*)freq,zs,zr
       read(1,*)rmax,dr,ndr
       read(1,*)zmax,dz,ndz,zmplt
-      read(1,*)c0,np,ns,rs
+      read(1,*)c0,nmp,ns,rs
 
 c
       i=1
@@ -123,22 +134,17 @@ c
     2 rb(i)=2.0*rmax
       zb(i)=zb(i-1)
 c
-      pi=3.1415926535897932384626433832795d0
-      ci=cmplx(0.0d0,1.0d0,16)
-      eta=0.01832338997198569352181968569348d0
-      eps=1.0e-30
       ib=1
-      mdr=0
       r=dr
       omega=2.0*pi*freq
       ri=1.0+zr/dz
-      ir=int(ri)
-      dir=ri-float(ir)
+      ir=int(ri,8)
+      deir=ri-float(ir)
       k0=omega/c0
-      nz=int(zmax/dz-0.5)
-      nzplt=int(zmplt/dz-0.5)
+      nz=int(zmax/dz-0.5,8)
+      nzplt=int(zmplt/dz-0.5,8)
       z=zb(1)
-      iz=int(1.0+z/dz)
+      iz=int(1.0+z/dz,8)
       iz=max(2,iz)
       iz=min(nz,iz)
       if(rs.lt.dr)rs=2.0*rmax
@@ -147,8 +153,8 @@ c
       write(*,*)'   Need to increase parameter mz to ',nz+2
       stop
       end if
-      if(np.gt.mp)then
-      write(*,*)'   Need to increase parameter mp to ',np
+      if(nmp.gt.mp)then
+      write(*,*)'   Need to increase parameter mp to ',nmp
       stop
       end if
       if(i.gt.mr)then
@@ -174,16 +180,17 @@ c     The initial profiles and starting field.
 c
       call profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,
      >   alpw,alpb,ksqw,ksqb)
-      call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,ksq,
+      call selfs(mz,nz,mp,nmp,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,ksq,
      >   ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
-c     call outpt(mz,mdr,ndr,ndz,nzplt,lz,ir,dir,r,f3,u)
+c     call outln(mz,ir,deir,r,f3,u,pout)
+c     call outgr(mz,ndz,nzplt,lz,r,f3,u,poutg)
 c
 c     The propagation matrices.
 c
-c     call epade(mp,np,ns,1_8,k0,dr,pd1,pd2)
-c     call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
-c    >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-
+      call epade(mp,nmp,ns,1_8,k0,dr,pd1,pd2)
+      call matrc(mz,nz,mp,nmp,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
+     >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+c
       close(1)
       return
       end
@@ -199,16 +206,16 @@ c
      >   attn(mz),alpw(mz),alpb(mz),ksqw(mz)
       complex*16 ci,ksqb(mz)
 c
-cf2py intent(in) mz,nz,ci,dz,omega,rmax,c0,k0
-cf2py intent(out) rp,cw,cb,rhob,attn,alpw,alpb,ksqw,ksqb
+cf2py intent(in) mz,nz,dz,omega,rmax,c0,k0
+cf2py intent(out) rp,cw,cb,rhob,attn,ksqw,ksqb,alpw,alpb
 c
-      ci=cmplx(0.0d0,1.0d0,16)
+      ci=cmplx(0.0,1.0,8)
       eta=0.01832338997198569352181968569348d0
+c
       call zread(mz,nz,dz,cw)
       call zread(mz,nz,dz,cb)
       call zread(mz,nz,dz,rhob)
       call zread(mz,nz,dz,attn)
-
       rp=2.0*rmax
       read(1,*,end=1)rp
 c
@@ -230,20 +237,17 @@ c
       integer*8 mz,nz,i,j,k,iold
       real*8 dz,zi,profi,prof(mz)
 c
-cf2py intent(in) mz,nz,dz
-cf2py intent(out) prof
-c
       do 1 i=1,nz+2
       prof(i)=-1.0
     1 continue
       read(1,*)zi,profi
       prof(1)=profi
-      i=int(1.5+zi/dz)
+      i=int(1.5+zi/dz,8)
       prof(i)=profi
       iold=i
     2 read(1,*)zi,profi
       if(zi.lt.0.0)go to 3
-      i=int(1.5+zi/dz)
+      i=int(1.5+zi/dz, 8)
       if(i.eq.iold)i=i+1
       prof(i)=profi
       iold=i
@@ -263,22 +267,22 @@ c
       return
       end
 
-      subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,
+      subroutine matrc(mz,nz,mp,nmp,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,
      >   ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-      implicit none
-      integer*8 mz,nz,mp,np,iz,jz,i,i1,i2,j
-      real*8 dz,k0,rhob(mz),alpw(mz),alpb(mz),ksqw(mz),
-     >   f1(mz),f2(mz),f3(mz),a1,a2,a3,c1,c2,c3,cfact,dfact
-      complex*16 d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
-c
-cf2py intent(in) mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw
-cf2py intent(in) ksqb,pd1,pd2
-cf2py intent(out) f1,f2,f3,r1,r2,r3,s1,s2,s3
-c
 c
 c     The tridiagonal matrices.
 c
+      implicit none
+      integer*8 mz,nz,mp,nmp,iz,jz,i,j,i1,i2
+      real*8 dz,k0,rhob(mz),f1(mz),f2(mz),f3(mz),alpw(mz),alpb(mz),
+     >   ksqw(mz),a1,a2,a3,c1,c2,c3,cfact,dfact
+      complex*16 d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
+     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+c
+cf2py intent(in) mz,nz,mp,nmp,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb
+cf2py intent(in) pd1,pd2
+cf2py intent(inout) ksq
+cf2py intent(out) f1,f2,f3,r1,r2,r3,s1,s2,s3
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -317,7 +321,7 @@ c
       ksq(i)=ksqw(i)
     3 continue
       end if
-
+c
       if(iz.lt.jz)then
       i1=iz
       i2=jz+1
@@ -328,7 +332,7 @@ c
       ksq(i)=ksqb(i)
     4 continue
       end if
-
+c
       do 6 i=i1,i2
 c
 c     Discretization by Galerkins method.
@@ -339,8 +343,8 @@ c
       d1=c1+dfact*(ksq(i-1)+ksq(i))
       d2=c2+dfact*(ksq(i-1)+6.0*ksq(i)+ksq(i+1))
       d3=c3+dfact*(ksq(i)+ksq(i+1))
-
-      do 5 j=1,np
+c
+      do 5 j=1,nmp
       r1(i,j)=a1+pd2(j)*d1
       r2(i,j)=a2+pd2(j)*d2
       r3(i,j)=a3+pd2(j)*d3
@@ -352,7 +356,7 @@ c
 c
 c     The matrix decomposition.
 c
-      do 9 j=1,np
+      do 9 j=1,nmp
       do 7 i=i1,iz
       rfact=1.0/(r2(i,j)-r1(i,j)*r3(i-1,j))
       r1(i,j)=r1(i,j)*rfact
@@ -361,7 +365,7 @@ c
       s2(i,j)=s2(i,j)*rfact
       s3(i,j)=s3(i,j)*rfact
     7 continue
-
+c
       do 8 i=i2,iz+2,-1
       rfact=1.0/(r2(i,j)-r3(i,j)*r1(i+1,j))
       r1(i,j)=r1(i,j)*rfact
@@ -370,32 +374,32 @@ c
       s2(i,j)=s2(i,j)*rfact
       s3(i,j)=s3(i,j)*rfact
     8 continue
-
+c
       r2(iz+1,j)=r2(iz+1,j)-r1(iz+1,j)*r3(iz,j)
       r2(iz+1,j)=r2(iz+1,j)-r3(iz+1,j)*r1(iz+2,j)
       r2(iz+1,j)=1.0/r2(iz+1,j)
-
+c
     9 continue
-
+c
       return
       end
 
-      subroutine solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+      subroutine solve(mz,nz,mp,nmp,iz,u,v,r1,r2,r3,s1,s2,s3)
+c
+c     The tridiagonal solver.
+c
       implicit none
-      integer*8 mz,nz,mp,np,iz,i,j
+      integer*8 mz,nz,mp,nmp,iz,i,j
       real*8 eps
       complex*16 u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
      >   s1(mz,mp),s2(mz,mp),s3(mz,mp)
 c
-cf2py intent(in) mz,nz,mp,np,iz,r1,r2,r3,s1,s2,s3
+cf2py intent(in) mz,nz,mp,nmp,iz,r1,r2,r3,s1,s2,s3
 cf2py intent(out) u,v
 c
-c     The tridiagonal solver.
-c
-
       eps=1.0e-30
 c
-      do 6 j=1,np
+      do 6 j=1,nmp
 c
 c     The right side.
 c
@@ -427,76 +431,80 @@ c
 c
       return
       end
-c
-c     Matrix updates.
-c
-      subroutine updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,
+
+      subroutine updat(mr,mz,nz,mp,nmp,iz,ib,dr,dz,omega,rmax,c0,k0,
      >   r,rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,
      >   f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
-c     Varying bathymetry.
+c     Matrix updates.
 c
       implicit none
-      integer*8 mr,mz,nz,mp,np,iz,ib,jz,ns
-      real*8 dr,dz,eta,omega,rmax,c0,k0,r,rp,rs,rb(mr),zb(mr),cw(mz),
-     >   cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),
-     >   f1(mz),f2(mz),f3(mz),z
-      complex*16 ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
+      integer*8 mr,mz,nz,mp,nmp,iz,ib,jz,ns
+      real*8 dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),z,zb(mr),
+     >   attn(mz),cb(mz),rhob(mz),cw(mz),ksqw(mz),f1(mz),f2(mz),f3(mz),
+     >   alpw(mz),alpb(mz)
+      complex*16 ci,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
      >   s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
 c
-cf2py intent(in) mr,mz,nz,mp,ib
-cf2py intent(out) f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2
-cf2py intent(inout) iz
+cf2py intent(in) mr,mz,nz,mp,nmp,dr,dz,omega,rmax,c0,k0,r,rb,rs,zb
+cf2py intent(inout) rp,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb
+cf2py intent(inout) f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2
+cf2py intent(out) iz,ib
+c
 
-      eta=0.01832338997198569352181968569348d0
+      ci=cmplx(0.0d0,1.0d0,8)
+c
+c     Varying bathymetry.
+c
+
       if(r.ge.rb(ib+1))ib=ib+1
       jz=iz
       z=zb(ib)+(r+0.5*dr-rb(ib))*(zb(ib+1)-zb(ib))/(rb(ib+1)-rb(ib))
-      iz=int(1.0+z/dz)
+      iz=int(1.0+z/dz,8)
       iz=max(2,iz)
       iz=min(nz,iz)
-      if(iz.ne.jz)call matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,
-     >   ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+      if(iz.ne.jz)call matrc(mz,nz,mp,nmp,iz,jz,dz,k0,rhob,alpw,alpb,
+     >   ksq,ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
 c     Varying profiles.
 c
-      if(r.ge.rp)then
-      call profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,
-     >   alpw,alpb,ksqw,ksqb)
-      call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
-     >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-      end if
+c     if(r.ge.rp)then
+c     call profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,
+c    >   alpw,alpb,ksqw,ksqb)
+c     call matrc(mz,nz,mp,nmp,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
+c    >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+c     end if
 c
 c     Turn off the stability constraints.
 c
       if(r.ge.rs)then
       ns=0
       rs=2.0*rmax
-      call epade(mp,np,ns,1_8,k0,dr,pd1,pd2)
-      call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
+      call epade(mp,nmp,ns,1_8,k0,dr,pd1,pd2)
+      call matrc(mz,nz,mp,nmp,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       end if
 c
       return
       end
+
+      subroutine selfs(mz,nz,mp,nmp,ns,iz,zs,dr,dz,k0,rhob,alpw,
+     >   alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
 c     The self-starter.
 c
-      subroutine selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,
-     >   alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
       implicit none
-      integer*8 mz,nz,mp,np,ns,iz,is
-      real*8 zs,dr,dz,pi,k0,rhob(mz),alpw(mz),alpb(mz),
-     >   f1(mz),f2(mz),f3(mz),ksqw(mz),dis,si
+      integer*8 mz,nz,mp,nmp,ns,iz,is
+      real*8 zs,dr,dz,pi,k0,rhob(mz),alpw(mz),alpb(mz),dis,si,
+     >   f1(mz),f2(mz),f3(mz),ksqw(mz)
       complex*16 u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
      >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
 c
 c     Conditions for the delta function.
 c
-
       pi=3.1415926535897932384626433832795d0
       si=1.0+zs/dz
-      is=int(si)
+      is=int(si,8)
       dis=si-float(is)
       u(is)=(1.0-dis)*sqrt(2.0*pi/k0)/(dz*alpw(is))
       u(is+1)=dis*sqrt(2.0*pi/k0)/(dz*alpw(is))
@@ -505,68 +513,84 @@ c     Divide the delta function by (1-X)**2 to get a smooth rhs.
 c
       pd1(1)=0.0
       pd2(1)=-1.0
-
       call matrc(mz,nz,mp,1_8,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       call solve(mz,nz,mp,1_8,iz,u,v,r1,r2,r3,s1,s2,s3)
       call solve(mz,nz,mp,1_8,iz,u,v,r1,r2,r3,s1,s2,s3)
+
 c
 c     Apply the operator (1-X)**2*(1+X)**(-1/4)*exp(ci*k0*r*sqrt(1+X)).
 c
-      call epade(mp,np,ns,2_8,k0,dr,pd1,pd2)
-c     call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
-c    >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-c     call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
-
+      call epade(mp,nmp,ns,2_8,k0,dr,pd1,pd2)
+      call matrc(mz,nz,mp,nmp,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
+     >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+      call solve(mz,nz,mp,nmp,iz,u,v,r1,r2,r3,s1,s2,s3)
+c
       return
       end
+
+      subroutine outln(mz,ir,deir,r,f3,u,pout)
+c
+c     Output transmission loss line
+c
+      implicit none
+      integer*8 mz,ir
+      real*8 deir,eps,r,f3(mz)
+      complex*16 ur,u(mz),pout
+c
+cf2py intent(in) mz,ir,deir,r,f3,u
+cf2py intent(out) pout
+c
+      eps=1e-20
+c
+      ur=(1.0-deir)*f3(ir)*u(ir)+deir*f3(ir+1)*u(ir+1)
+c     tl=-20.0*log10(abs(ur)+eps)+10.0*log10(r+eps)
+      pout=ur/sqrt(r+eps)
+c     write(2,*)r,real(pout),imag(pout)
+      return
+      end
+
+      subroutine outgr(mz,ndz,nzplt,lz,r,f3,u,poutg)
 c
 c     Output transmission loss.
 c
-      subroutine outpt(mz,mdr,ndr,ndz,nzplt,lz,ir,dir,r,f3,u,tlg)
+
       implicit none
-      integer*8 mz,mdr,ndr,ndz,nzplt,lz,ir,i,j
-      complex*16 ur,u(mz)
-      real*8 dir,eps,r,f3(mz),tlg(mz),tl
+      integer*8 mz,ndz,nzplt,lz,i,j
+      real*8 eps,r,f3(mz)
+      complex*16 ur,u(mz),poutg(mz)
 c
-      eps=1.0e-30
-      ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
-      tl=-20.0*dlog10(cdabs(ur)+eps)+10.0*dlog10(r+eps)
-      write(2,*)r,tl
+cf2py intent(in) mz,ndz,nzplt,lz,r,f3,u
+cf2py intent(out) poutg
 c
-      mdr=mdr+1
-      if(mdr.eq.ndr)then
-      mdr=0
-c
+      eps=1e-20
+
       j=0
       do 1 i=ndz,nzplt,ndz
       ur=u(i)*f3(i)
       j=j+1
-      tlg(j)=-20.0*dlog10(cdabs(ur)+eps)+10.0*dlog10(r+eps)
+c     tlg(j)=-20.0*log10(abs(ur)+eps)+10.0*log10(r+eps)
+      poutg(j)=ur/sqrt(r+eps)
     1 continue
-      write(3)(tlg(j),j=1,lz)
-      end if
-c
+c     write(3)(poutg(j),j=1,lz)
+
       return
       end
+
+      subroutine epade(mp,nmp,ns,ip,k0,dr,pd1,pd2)
 c
 c     The coefficients of the rational approximation.
 c
-      subroutine epade(mp,np,ns,ip,k0,dr,pd1,pd2)
       implicit none
-      integer*8 mp,np,ns,ip,m,i,j,n
-      parameter (m=40)
-      complex*16 ci,z1,dg,dh1,dh2,dh3,a,b,pd1(mp),pd2(mp)
-      real*8 nu,k0,dr,bin,fact,alp,pi,sig
-      dimension bin(m,m),a(m,m),b(m),dg(m),dh1(m),dh2(m),dh3(m),fact(m)
-
-cf2py intent(in) mp,np,ns,ip,k0,c0
-cf2py intent(out) pd1,pd2
+      integer*8 mp,nmp,ns,ip,i,j,n
+      real*8 nu,k0,dr,alp,bin(2*mp,2*mp),fact(2*mp),pi,sig
+      complex*16 ci,z1,dg(2*mp),dh1(2*mp),dh2(2*mp),dh3(2*mp),
+     >   a(2*mp,2*mp),b(2*mp),pd1(mp),pd2(mp)
 
       pi=3.1415926535897932384626433832795d0
-      ci=cmplx(0.0d0,1.0d0,16)
+      ci=cmplx(0.0d0,1.0d0,8)
       sig=k0*dr
-      n=2*np
+      n=2*nmp
 c
       if(ip.eq.1)then
       nu=0.0d0
@@ -603,7 +627,7 @@ c
 c
 c     The accuracy constraints.
 c
-      call deriv(m,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)
+      call deriv(2*mp,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)
 c
       do 7 i=1,n
       b(i)=dg(i+1)
@@ -620,7 +644,7 @@ c
       if(ns.ge.1)then
       z1=-3.0d0
       b(n)=-1.0d0
-      do 10 j=1,np
+      do 10 j=1,nmp
       a(n,2*j-1)=z1**j
       a(n,2*j)=0.0d0
    10 continue
@@ -629,29 +653,29 @@ c
       if(ns.ge.2)then
       z1=-1.5d0
       b(n-1)=-1.0d0
-      do 11 j=1,np
+      do 11 j=1,nmp
       a(n-1,2*j-1)=z1**j
       a(n-1,2*j)=0.0d0
    11 continue
       end if
 c
-      call gauss(m,n,a,b)
+      call gauss(2*mp,n,a,b)
 c
       dh1(1)=1.0d0
-      do 12 j=1,np
+      do 12 j=1,nmp
       dh1(j+1)=b(2*j-1)
    12 continue
-      call fndrt(dh1,np,dh2,m)
-      do 13 j=1,np
+      call fndrt(dh1,nmp,dh2,2*mp)
+      do 13 j=1,nmp
       pd1(j)=-1.0d0/dh2(j)
    13 continue
 c
       dh1(1)=1.0d0
-      do 14 j=1,np
+      do 14 j=1,nmp
       dh1(j+1)=b(2*j)
    14 continue
-      call fndrt(dh1,np,dh2,m)
-      do 15 j=1,np
+      call fndrt(dh1,nmp,dh2,2*mp)
+      do 15 j=1,nmp
       pd2(j)=-1.0d0/dh2(j)
    15 continue
 c
@@ -663,24 +687,25 @@ c
 c     The operator function.
 c
       implicit none
-      complex*16 ci,g
       real*8 alp,sig,x,nu
-      ci=cmplx(0.0d0,1.0d0,16)
-      g=(1.0d0-nu*x)**2*cdexp(alp*dlog(1.0d0+x)+
-     >   ci*sig*(-1.0d0+dsqrt(1.0d0+x)))
+      complex*16 ci,g
+
+      ci=cmplx(0.0d0,1.0d0,8)
+      g=(1.0d0-nu*x)**2*cdexp(alp*log(1.0d0+x)+
+     >   ci*sig*(-1.0d0+sqrt(1.0d0+x)))
       return
       end
 
       subroutine deriv(m,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)
-      implicit none
-      integer*8 m,n,i,j
-      complex*16 ci,dg(m),dh1(m),dh2(m),dh3(m)
-      real*8 sig,alp,bin(m,m),nu,exp1,exp2,exp3
 c
 c     The derivatives of the operator function at x=0.
 c
-
-      ci=cmplx(0.0d0,1.0d0,16)
+      implicit none
+      integer*8 m,n,i,j
+      real*8 sig,alp,bin(m,m),nu,exp1,exp2,exp3
+      complex*16 ci,dg(m),dh1(m),dh2(m),dh3(m)
+c
+      ci=cmplx(0.0d0,1.0d0,8)
 c
       dh1(1)=0.5d0*ci*sig
       exp1=-0.5d0
@@ -752,8 +777,8 @@ c
 c     Rows are interchanged for stability.
 c
       implicit none
-      integer*8 m,n,i,i0,j
-      real*8 amp,amp0
+      integer*8 m,n,i,j,i0
+      real*8 amp0,amp
       complex*16 temp,a(m,m),b(m)
 c
       i0=i
@@ -785,8 +810,8 @@ c     The root-finding subroutine.
 c
       implicit none
       integer*8 n,m,i,k
-      complex*16 a(m),z(m),root
       real*8 err
+      complex*16 a(m),z(m),root
 c
       if(n.eq.1)then
       z(1)=-a(1)/a(2)
@@ -833,11 +858,11 @@ c     This subroutine finds a root of a polynomial of degree n > 2
 c     by Laguerres method.
 c
       implicit none
-      integer*8 n,m,i,iter,jter,nter
+      integer*8 m,n,i,nter,iter,jter
       real*8 amp1,amp2,rn,eps,err
       complex*16 a(m),az(50),azz(50),z,dz,p,pz,pzz,f,g,h,ci
 c
-      ci=cmplx(0.0d0,1.0d0,16)
+      ci=cmplx(0.0d0,1.0d0,8)
       eps=1.0d-20
       rn=real(n)
 c

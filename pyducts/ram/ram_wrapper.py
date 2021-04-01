@@ -1,5 +1,80 @@
 import rampy
 import numpy as np
+from scipy.interpolate import interp1d
+from enviornment import Enviornment
+
+
+def run_ram():
+    """replaces the main loop in ram"""
+    env = Enviornment()
+    env.read_in("ram.in")
+
+    # FORTRAN preallocation parameters
+    mz = len(env.zaxis)
+    mr = len(env.raxis)
+    mp = 2 * env.ram_info["num_pade"]
+
+    pline = []
+    pgrid = []
+
+    (nz,nmp,ns,ndr,ndz,iz,nzplt,lz,ib,ir,deir,dr,dz,omega,rmax,
+     c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,
+     ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2) = rampy.setup(mr,mz,mp)
+
+    pline.append(rampy.outln(ir,deir,r,f3,u))
+    pgrid.append(rampy.outgr(ndz,nzplt,lz,r,f3,u))
+
+    if len(env.profiles) > 2:
+        rp = env.profiles[1]['rp']
+    else:
+        # range independent enviornment
+        rp = rmax * 2
+
+    # interpolate enviornment to RAM grid
+    prof_i = 0
+    profs = env.populate_quantities(prof_i)
+    (cw_p, cb_p, rhob_p, attn_p, ksqw_p, ksqb_p, alpw_p, alpb_p) = profs
+
+    mdr=0
+    for r in env.raxis:
+        (iz,ib) = rampy.updat(nz,nmp,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,
+                              rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,r1,r2,r3,
+                              s1,s2,s3,pd1,pd2)
+
+        """
+        # update changing profiles here
+        if r > rp:
+            # interpolate enviornment to RAM grid
+            prof_i += 1
+            profs = env.populate_quantities(prof_i)
+            (cw_p, cb_p, rhob_p, attn_p, ksqw_p, ksqb_p, alpw_p, alpb_p) = profs
+
+            if len(env.profiles) > prof_i + 1:
+                rp = env.profiles[prof_i + 1]['rp']
+            else:
+                # range independent enviornment
+                rp = rmax * 2
+
+            (f1,f2,f3,r1,r2,r3,s1,s2,s3) = rampy.matrc(nz,nmp,iz,iz,dz,
+                                                       k0,rhob,alpw,alpb,ksq,
+                                                       ksqw,ksqb,pd1,pd2)
+
+        """
+        u, v = rampy.solve(nz,nmp,iz,r1,r2,r3,s1,s2,s3)
+
+        pline.append(rampy.outln(ir,deir,r,f3,u))
+
+        mdr=mdr+1
+        if mdr == ndr:
+            mdr=0
+            pgrid.append(rampy.outgr(ndz,nzplt,lz,r,f3,u))
+
+
+    pline = np.array(pline)
+    pgrid = np.array(pgrid)
+
+    return pline, pgrid
+
 
 def read_in(file_name):
     """read RAM imput from file_name"""
@@ -12,7 +87,6 @@ def read_in(file_name):
         [zmax, dz, ndz, zmplt] = np.array(f.readline().split()).astype(float)
         ndr = int(ndz)
         [c0, num_pade, num_stab, rs] = np.array(f.readline().split()).astype(float)
-        k0 = omega / c0
         num_pade = int(num_pade)
         num_stab = int(num_stab)
 
@@ -47,7 +121,11 @@ def read_in(file_name):
                 attn.append(np.array(f.readline().split()).astype(float))
             attn = np.array(attn[:-1])
 
-            profile.append([rp, cw, cb, rhob, attn])
+            profile.append({"rp":rp,
+                            "cw":cw,
+                            "cb":cb,
+                            "rhob":rhob,
+                            "attn":attn})
 
             rp = f.readline().split()
             if rp:
@@ -57,20 +135,27 @@ def read_in(file_name):
 
         return profile
 
-def read_line(file_name):
+
+
+def read_line(file_name, num_bytes=8, is_cmpx=True):
     """read RAM line outpult from file_name"""
     tl = np.loadtxt(file_name)
     r = tl[:, 0]
-    tl = tl[:, 1]
+    if not is_cmpx:
+        tl = tl[:, 1]
+    else:
+        tl = -20 * np.log10(np.abs(tl[:, 1] + 1j * tl[:, 2]) + np.spacing(1))
     return r, tl
 
-def read_grid(file_name, num_bytes=8):
+def read_grid(file_name, num_bytes=8, is_cmpx=True):
     """read RAM grid outpult from file_name"""
 
     if num_bytes == 8:
+        cdt=np.complex128
         fdt=np.float64
-        idt=np.int32
+        idt=np.int64
     elif num_bytes == 4:
+        cdt=np.complex64
         fdt=np.float32
         idt=np.int32
     else:
@@ -97,17 +182,22 @@ def read_grid(file_name, num_bytes=8):
         _ = np.frombuffer(f.read(4), dtype='int32' )
 
         zplot = np.arange(num_zplot) * zmplt / (num_zplot-1);
-        rplot = (np.arange(ndr) + 1) * dr
+        num_rplot = int(np.floor(r_max / (ndr * dr)))
+        rplot = (np.arange(num_rplot) + 1) * dr
 
         tl_grid = []
 
-        for i in range(ndr):
+        for _ in rplot:
             _ = np.frombuffer(f.read(4), dtype='int32' )
-            TL = np.frombuffer(f.read(num_bytes * num_zplot), dtype=fdt)
+            if is_cmpx:
+                TL = np.frombuffer(f.read(2 * num_bytes * num_zplot), dtype=cdt)
+                TL = -20 * np.log10(np.abs(TL) + np.spacing(1))
+            else:
+                TL = np.frombuffer(f.read(num_bytes * num_zplot), dtype=fdt)
             _ = np.frombuffer(f.read(4), dtype='int32' )
             tl_grid.append(TL)
 
-        tl_grid = np.array(TL)
+        tl_grid = np.array(tl_grid)
 
     return rplot, zplot, tl_grid
 

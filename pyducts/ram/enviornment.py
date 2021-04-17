@@ -121,67 +121,9 @@ class Enviornment:
             attn_up[zi] = ier(self.zaxis[zi])
 
         # compute values used in ram calculations
-        eta = 1.0 / (40.0 * np.pi * np.log10(np.e))
-
         ksqw = (omega / cw_up) ** 2 - k0 ** 2
         ksqb = ((omega / cb_up) *(1.0 + 1.0j * self.eta * attn_up)) ** 2 - k0 ** 2
         alpw = np.sqrt(cw_up / self.ram_info["c0"])
         alpb = np.sqrt(rhob_up * cb_up / self.ram_info["c0"])
 
         return cw_up, cb_up, rhob_up, attn_up, ksqw, ksqb, alpw, alpb
-
-
-class Layer:
-    """A medium with smoothly varing properties"""
-    def __init__(self, rzw_l):
-        """initialize layer with continous material properties"""
-        # 3xN dimensional array, range, z origin, and width of layer
-        self.rzw_l = rzw_l
-        self.p_range = []
-        self.properties = []
-
-    def add_profile(self, range_profile, cp_l, cs_l=None, rho_l=1e3,
-                    ap_l=0., as_l=None):
-        """Add properties to layer, specified as a vertical profile"""
-        # Following properties may be scalar, or 2xN specified as:
-        # depth from layer origin (m)
-        # property value
-        #
-        # cp_l: compressional sound speed in layer (m/s)
-        # rho_l: density in layer (kg / m^3)
-        # ap_l: compressional attenuation
-        # cs_l: shear sound speed in layer (m/s)
-        # as_l: shear attenuation
-
-        self.p_range.append(range_profile)
-        self.properties.append([cp_l, rho_l, ap_l, cs_l, as_l])
-
-    def populate_grid(self, acoustic_property, raxis, zaxis, grided_data=None):
-        """interpolate an acoustic property to a (r, z) grid"""
-
-
-class Profile:
-    """Define properties at a single range value"""
-    def __init__(self, r_profile):
-        """define location of profile"""
-        self.r_profile = r_profile
-        self.layers = []
-
-    def add_layer(self, width_layer, z_layer, cp_layer,
-                  cs_layer=None, rho_layer=None, attn_layer=None):
-        """define a layer"""
-        new_l = Layer(layer_width, z_layer, cp_layer, cs_layer,
-                      rho_layer, attn_layer)
-        self.layers.append(new_l)
-
-    def add_halspace(self, width_hs, z_hs, cp_hs,
-                     cs_hs=None, rho_hs=None, attn_hs=None):
-        """defined a half-space, or absorbing layer at grid edge"""
-        self.width_hs = width_hs  # height of absorbing layer
-        self.z_hs = z_hs  # hs depth corrdinate
-        self.cp_hs = cp_hs
-        self.cs_hs = cs_hs
-        self.rho_hs = rho_hs
-        self.attn_hs = attn_hs
-
-

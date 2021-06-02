@@ -7,34 +7,48 @@ class PropagationEnviornment:
     def __init__(self, name='autogen'):
         """setup an empty framework"""
         self.name = name
-        self.source = None
-        self.p_acs = None
+        self.source = xr.DataArray()
+        self.p_acs = xr.DataArray()
+        self.profile = xr.DataArray()
 
-    def src(self, source_depth):
+    def src(self, source_depth, frequency):
         """specify the source location"""
         source_depth = np.array(source_depth, ndmin=1)
+        frequency = np.array(frequency, ndmin=1)
+        self.source = xr.DataArray(1+0j,
+                                   dims=['source_depth', 'frequency'],
+                                   coords={'source_depth': source_depth,
+                                           'frequency':frequency},
+                                   attrs={'units':'(m), (Hz)'})
 
-        # use 1 as a value for source existance
-        source_value = np.ones_like(source_depth)
-
-        self.source = xr.DataArray(source_value,
-                                   coords=[source_depth],
-                                   dims=['depth'])
-
-    #TODO: the pressure observations are still tied to the profile, which may not be a bad thing but should be either made explicit or changed.
-    def pressure(self, obs_depth, obs_range):
+    def pressure(self, dz, num_z, dr, num_r):
         """specify the observation locations"""
-        obs_depth = np.array(obs_depth, ndmin=1)
-        obs_range = np.array(obs_range, ndmin=1)
+        self.p_acs = xr.DataArray(np.nan + 1j * np.nan,
+                                  coords={'dz':dz,
+                                          'num_z':num_z,
+                                          'dr':dr,
+                                          'num_r':num_r})
 
-        # use 0 as an empty placeholder
-        p_val = np.zeros((obs_depth.size, obs_range.size))
+    def profiles(self, zs, rs, cp, interpolation=1):
+        """Populate a profile matrix"""
+        zs = np.array(zs, ndmin=1)
+        rs = np.array(rs, ndmin=1)
+        cp = np.array(cp, ndmin=1)
 
-        self.source = xr.DataArray(p_val,
-                                   coords=[obs_depth, obs_range],
-                                   dims=['depth', 'range'])
+        self.profile = xr.DataArray(cp,
+                                    dims=['zs', 'rs'],
+                                    coords={'zs':zs,
+                                            'rs':rs},
+                                    attrs={'units':'(m)'})
+
+    def to_netCDF(self):
+        """Put all data into a dataset and convert to netCDF file"""
+        all_data = xr.Dataset(data_vars={'source':self.source,
+                                         'p_acs':self.p_acs,
+                                         'profiles':self.profile})
+        all_data.to_netcdf(self.name + '.nc', format="NETCDF4")
 
 
 if __name__ == "__main__":
     test = PropagationEnviornment('hello')
-    test.src(50.)
+    test.src(50., 1e3)

@@ -1,3 +1,0 @@
-'RP *'				! 'R/X (coord), Pos/Neg/Both, * for beampattern' 
-501				! Nrr number of receiver ranges
--10.0  10.0 /			! rr( 1 : Nrr ) receiver ranges (km)

@@ -29,7 +29,7 @@ class Modes:
         det, num_cross = _det_estimate(k_min, *args)
 
         # make array to save bisection results
-        regions = np.full((3, 2, 2 * num_cross), np.nan)
+        regions = np.full((3, 2, num_cross + 1), np.nan)
         regions[0, :, -1] = k_min
         regions[1, :, -1] = det
         regions[2, :, -1] = num_cross
@@ -46,7 +46,14 @@ class Modes:
         while sr is not None:
             _add_bisection(sr, *args)
             sr = _split_regions(regions)
-        return regions
+
+        if self.bottom_HS is None:
+            return regions
+        else:
+            # acoustic HS mean changes in number of zero crossings do not
+            # occur at eigen_values
+            _bound_zeros(regions)
+            return regions
 
         # compute eigen-values with bisection algorithm
         kr_eig = []
@@ -200,20 +207,25 @@ def _sturm_sequence(kz2, dz):
             y_out[i - 1] *= scale
     return y_out * dz
 
+def _bound_zeros(regions):
+    """Work up from zero-ith mode to bound eigenvalues"""
+    # trival case of a (0 | 1) eigenvalues
+    return regions
+    if regions.shape[-1] == 2:
+        return regions
+
+    for i in np.arange(regions.shape[-1] - 1):
+        # check if region has been split by value of determinant
+        pass
+        #if regions[0,
 
 def _add_bisection(sr, *args):
     # first bisection
     k_test = (sr[0, 1, 0] + sr[0, 0, -1]) / 2
     det, num_cross = _det_estimate(k_test, *args)
-
-    # adjust crossing index bases on sign
     current_index = sr[2, 0, 0]
-    if np.sign(sr[1, 0, 0]) < 0: current_index += 1
-
     # adjust crossing index bases on sign
-    cross_index = 2 * int(num_cross - current_index) - 1
-    if np.sign(det) < 0: cross_index += 1
-
+    cross_index = int(num_cross - current_index)
     if np.isnan(sr[0, 0, cross_index]):
         sr[0, :, cross_index] = k_test
         sr[1, :, cross_index] = det

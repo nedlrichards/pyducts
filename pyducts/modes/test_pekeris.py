@@ -61,10 +61,8 @@ run_kraken('./envs/pekeris.env')
 phi_krak, k_krak, z_krak = read_mod('./envs/pekeris.env')
 
 c_ier = lambda z: np.full_like(np.array(z, ndmin=1, dtype=np.float64), c)
-fd_modes = Modes(2 * pi * fc, c_ier, [c, cb], D, bottom_HS=[cb, rho_b])
+fd_modes = Modes(2 * pi * fc, c_ier, [c, cb], D, bottom_HS=[cb, rho_b / 1000.])
 kr_modes = fd_modes.kr_modes()
-1/0
-
 
 kr_test = kr_eig[-1]
 #kr_test = np.real(k_krak[0])
@@ -81,6 +79,12 @@ for k in k_test:
     dets.append(det)
     ncs.append(nc)
 dets = np.array(dets)
+
+fig, ax = plt.subplots()
+ax.plot(k_test, dets)
+ax.plot(kr_modes[0, 0, :], kr_modes[1, 0, :], '.')
+
+1/0
 
 acc = phi_out.y[0, -1] + phi_out.y[1, -1] * rho_b / (rho * np.sqrt(kr_test ** 2 - k_bottom ** 2))
 

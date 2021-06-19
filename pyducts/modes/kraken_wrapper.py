@@ -6,14 +6,21 @@ at_path = path.abspath(path.expanduser('~/at/bin'))
 
 def run_kraken(file_name):
     """run kraken on an env file"""
-    fn = path.abspath(file_name)
-    env_file = path.splitext(fn)[0]
+    env_file = path.splitext(file_name)[0]
 
     run_cmd = [path.join(at_path, 'kraken.exe'), env_file]
     # TODO: see if status gives anything
     status = subprocess.run(run_cmd, check=True)
     return
 
+def run_field(flp_file):
+    """run kraken on an env file"""
+    flp_file = path.splitext(flp_file)[0]
+
+    run_cmd = [path.join(at_path, 'field.exe'), flp_file]
+    # TODO: see if status gives anything
+    status = subprocess.run(run_cmd, check=True)
+    return
 
 def write_env(file_name, fc, z, ssp, bottom_HS =[1600., 1.8]):
     """basic capability env writting"""
@@ -43,7 +50,7 @@ def write_env(file_name, fc, z, ssp, bottom_HS =[1600., 1.8]):
     bot_options = 'A'
     bottom_c, bottom_rho = bottom_HS
 
-    ps_limits = [0, bottom_c]  # let kraken bound phase speeds
+    ps_limits = [0, 3000]  # let kraken bound phase speeds
     num_points = int(10 * np.ceil(z_end * fc / np.min(ssp)))
 
 
@@ -104,3 +111,43 @@ def read_mod(envpath):
         k = k_c[::2] + 1j * k_c[1::2]
 
     return phi, k, z
+
+def read_shd(shdpath):
+    shd_file = path.splitext(shdpath)[0]
+    shd_file += '.shd'
+
+    with open(shd_file, 'rb') as f:
+        recl = np.fromfile(f, dtype='int32', count=1)[0] # record length in bytes will be 4*recl
+
+        f.seek(2 * 4 * recl) # reposition to end of second record
+        Nfreq  = np.fromfile(f, dtype='int32', count=1)[0]
+        Ntheta = np.fromfile(f, dtype='int32', count=1)[0]
+
+        Nsx = np.fromfile(f, dtype='int32', count=1)[0]
+        Nsy = np.fromfile(f, dtype='int32', count=1)[0]
+        Nsz = np.fromfile(f, dtype='int32', count=1)[0]
+
+        Nrz = np.fromfile(f, dtype='int32', count=1)[0]
+        Nrr = np.fromfile(f, dtype='int32', count=1)[0]
+        freq0 = np.fromfile(f, dtype='float32', count=1)[0]
+        atten = np.fromfile(f, dtype='float32', count=1)[0]
+
+        # read receiver postions
+        f.seek(8 * 4 * recl)
+        z = np.fromfile(f, dtype='float32', count=Nrz)
+
+        f.seek(9 * 4 * recl)
+        r = np.fromfile(f, dtype='float32', count=Nrr)
+        all_pressure = []
+
+        for irz in np.arange(Nrz - 1):
+            recnum = 10 + irz
+            status = f.seek(recnum * 4 * recl)
+
+            temp = np.fromfile(f, dtype='float32', count=2 * Nrr)
+            pressure = temp[::2] + 1j * temp[1::2]
+
+            all_pressure.append(pressure)
+        all_pressure = np.array(all_pressure)
+
+    return z, r, all_pressure

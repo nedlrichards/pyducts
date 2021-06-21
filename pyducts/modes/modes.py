@@ -1,5 +1,5 @@
 import numpy as np
-from math import pi, sqrt
+from math import pi, sqrt, copysign
 from scipy.linalg import eigh_tridiagonal
 from scipy.optimize import brentq, newton
 from scipy.integrate import solve_ivp
@@ -214,10 +214,24 @@ def _bound_zeros(regions):
     if regions.shape[-1] == 2:
         return regions
 
+    hs_regions = regions.copy()
+    hs_regions[:, 0, 0] = regions[:, 0, 0]
+
+    # figure the crossing direction from first mode value
+    cross_sign = copysign(1, hs_regions[1, 0, 0])
+
     for i in np.arange(regions.shape[-1] - 1):
         # check if region has been split by value of determinant
-        pass
-        #if regions[0,
+        if copysign(1, regions[1, 1, i]) == -cross_sign:
+            hs_regions[:, 1, i] = regions[:, 1, i]
+        # check if next region has needed sign
+        elif copysign(1, regions[1, 0, i + 1]) == -cross_sign:
+            hs_regions[:, 1, i] = regions[1, 0, i + 1]
+        # need to find needed sign change between sampled points
+        else:
+            # finding sign change isn't trival, acutally
+            first_guess = regions[:, 0, i + 1]
+
 
 def _add_bisection(sr, *args):
     # first bisection

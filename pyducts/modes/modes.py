@@ -74,7 +74,8 @@ class Modes:
         vecs = []
 
         for k_eig in krs:
-            eig_vec = _reverse_iteration(self.omega, k_eig, zaxis, c, phi_init)
+            eig_vec = reverse_iteration(self.omega, k_eig, zaxis, c, phi_init,
+                                         bottom_HS=self.bottom_HS)
             vecs.append(eig_vec)
             # get next initial vector by spliting last one at largest peak
             phi_init = eig_vec.copy()
@@ -85,41 +86,66 @@ class Modes:
         vecs = np.array(vecs)
         return vecs
 
-def _reverse_iteration(omega, kr, zaxis, c, phi_0):
+def reverse_iteration(omega, kr, zaxis, c, phi_0, bottom_HS=None):
     """Use reverse iteration to calculate eigenvector from value"""
     dz = (zaxis[-1] - zaxis[0]) / (zaxis.size - 1)
-    # TODO: This implicitly assumes PR top and bottom
-    numz = zaxis.size - 2
-    k_profile = omega / c[1: -1]
-    phi_0 = np.real(phi_0[1:-1])
+    if bottom_HS is not None:
+        numz = zaxis.size - 1
+        # assume pressure release top
+        k_profile = omega / c[1:]
+        phi_0 = np.real(phi_0[1:])
+        f = 1
+        gamma = np.sqrt(kr ** 2 - omega ** 2 / bottom_HS[0] ** 2)
+        g = bottom_HS[1] / gamma
+    else:
+        # assume pressure release top and bottom
+        numz = zaxis.size - 2
+        k_profile = omega / c[1: -1]
+        phi_0 = np.real(phi_0[1:-1])
 
     # allocate C matrix as real valued
-    d = -2 + dz ** 2 * (k_profile ** 2 - np.real(kr) ** 2)
-    C_band = np.ones((3, numz))
+    d = -2 + dz ** 2 * (k_profile ** 2 - np.real(kr) ** 2) + 0j
+    C_band = np.ones((3, numz), dtype=np.complex128)
     C_band[1, :] = d
+
+    if bottom_HS is not None:
+        C_band[1, -1] /= 2
+        C_band[1, -1] -= f / g
 
     # tridiagonal matrix solver
     gtsv = get_lapack_funcs('gtsv', (d,))
-    sbmv = get_blas_funcs('sbmv', (d,))
+    gbmv = get_blas_funcs('gbmv', (d,))
 
     phi_out = np.zeros_like(zaxis)
-    error = 1  # force at least 2 iterations
     flag = True
-    for i in range(10):
-        phi_1 = gtsv(C_band[0, 1:], d, C_band[2, 1:], phi_0)[3]
-        phi_0 = phi_1 / np.sqrt(np.trapz(np.abs(phi_1) ** 2) * dz)
-        error1 = np.linalg.norm(sbmv(1, 1., C_band[:2, :], phi_0))
-        if np.abs((error1 - error) / error) > 1e-7:
-            error = error1
-        else:
-            error = error1
-            flag = False
-            break
+    norm_previous = None
+
+    for i in range(50):
+        phi_1 = gtsv(C_band[0, 1:], C_band[1, :], C_band[2, 1:], phi_0)[3]
+        norm = np.sqrt(np.trapz(np.abs(phi_1) ** 2) * dz)
+
+        phi_0 = phi_1 / norm
+        print(norm)
+
+        #if norm_previous is not None and abs(norm - norm_previous) / norm < 1e-3:
+            #flag = False
+            #break
+        #else:
+            #norm_previous = norm
+
+    if i > 10:
+        print(i)
 
     if flag:
-        1/0
+        import ipdb; ipdb.set_trace()
+        pass
 
-    phi_out[1: -1] = np.real(phi_0)
+    if bottom_HS is None:
+        phi_out[1: -1] = np.real(phi_0)
+        norm += np.abs(phi_1[-1]) ** 2 / (2 * np.real(gamma) * bottom_HS[1])
+        phi_out /= norm
+    else:
+        phi_out[1:] = np.real(phi_0)
     return phi_out
 
 

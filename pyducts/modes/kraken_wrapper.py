@@ -22,7 +22,13 @@ def run_field(flp_file):
     status = subprocess.run(run_cmd, check=True)
     return
 
-def write_env(file_name, fc, z, ssp, bottom_HS =[1600., 1.8]):
+def synthesize_modes(modes_src, modes_rcr, kr, r_axis):
+    """synthesize modes into a pressure field"""
+    pressure = 1j * np.exp(-1j * pi / 4) * modes_src * modes*rcr \
+             * np.exp(1j * kr * r_axis) / np.sqrt(8 * pi * kr * r_axis)
+    return pressure
+
+def write_env(file_name, fc, z, ssp, bottom_HS=[1600., 1.8], cbounds=[0., 3000.]):
     """basic capability env writting"""
 
     fn = path.abspath(file_name)
@@ -50,9 +56,7 @@ def write_env(file_name, fc, z, ssp, bottom_HS =[1600., 1.8]):
     bot_options = 'A'
     bottom_c, bottom_rho = bottom_HS
 
-    ps_limits = [0, 3000]  # let kraken bound phase speeds
     num_points = int(10 * np.ceil(z_end * fc / np.min(ssp)))
-
 
     with open(env_file, 'w') as writer:
         writer.write("\n".join([title, f'{float(fc):.2f}', str(nmedia), options]))
@@ -63,10 +67,10 @@ def write_env(file_name, fc, z, ssp, bottom_HS =[1600., 1.8]):
         np.savetxt(writer, np.array([z, ssp]).T, fmt='%.2f', newline='\t /\n', delimiter='\t')
         writer.write("'" + bot_options + "'" + "\t 0.0" )
         writer.write(f"\n{z_end:.2f} \t {bottom_c:.2f} \t 0.0 \t {bottom_rho:.2f} \t 0.0 /")
-        writer.write(f"\n{ps_limits[0]} \t {ps_limits[1]}")
+        writer.write(f"\n{cbounds[0]} \t {cbounds[1]}")
         writer.write(f"\n1000")
         writer.write(f"\n{num_points}")
-        writer.write(f"\n{z[0]:.2f} \t {z[-2]:.2f} \t /")
+        writer.write(f"\n{z[0]:.2f} \t {z[-1]:.2f} \t /")
         writer.write(f"\n1 \n {z[-1]:.2f} /")
         writer.write(f"\n")
 
@@ -113,6 +117,7 @@ def read_mod(envpath):
     return phi, k, z
 
 def read_shd(shdpath):
+    """read pressure from kraken shd file"""
     shd_file = path.splitext(shdpath)[0]
     shd_file += '.shd'
 

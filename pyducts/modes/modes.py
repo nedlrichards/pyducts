@@ -95,8 +95,9 @@ def reverse_iteration(omega, kr, zaxis, c, phi_0, bottom_HS=None):
         k_profile = omega / c[1:]
         phi_0 = np.real(phi_0[1:])
         f = 1
-        gamma = np.sqrt(kr ** 2 - omega ** 2 / bottom_HS[0] ** 2)
-        g = bottom_HS[1] / gamma
+        gamma = np.sqrt(kr ** 2 - (omega / bottom_HS[0]) ** 2)
+
+        g = bottom_HS[1] / (1000. * gamma)
     else:
         # assume pressure release top and bottom
         numz = zaxis.size - 2
@@ -109,8 +110,10 @@ def reverse_iteration(omega, kr, zaxis, c, phi_0, bottom_HS=None):
     C_band[1, :] = d
 
     if bottom_HS is not None:
-        C_band[1, -1] /= 2
-        C_band[1, -1] -= f / g
+        C_band[0, -1] = -2
+        # assume a water column density of 1000
+        C_band[1, -1] = 2 * dz * 1000. * gamma / bottom_HS[1] + 2 \
+                      - dz ** 2 * (k_profile[-1] ** 2 - np.real(kr) ** 2)
 
     # tridiagonal matrix solver
     gtsv = get_lapack_funcs('gtsv', (d,))
@@ -123,15 +126,17 @@ def reverse_iteration(omega, kr, zaxis, c, phi_0, bottom_HS=None):
     for i in range(50):
         phi_1 = gtsv(C_band[0, 1:], C_band[1, :], C_band[2, 1:], phi_0)[3]
         norm = np.sqrt(np.trapz(np.abs(phi_1) ** 2) * dz)
+        # assume a water column density of 1000
+        norm /= np.sqrt(1000.)
 
         phi_0 = phi_1 / norm
-        print(norm)
+        #print(norm)
 
-        #if norm_previous is not None and abs(norm - norm_previous) / norm < 1e-3:
-            #flag = False
-            #break
-        #else:
-            #norm_previous = norm
+        if norm_previous is not None and abs(norm - norm_previous) / norm < 1e-3:
+            flag = False
+            break
+        else:
+            norm_previous = norm
 
     if i > 10:
         print(i)

@@ -28,7 +28,7 @@ def synthesize_modes(modes_src, modes_rcr, kr, r_axis):
              * np.exp(1j * kr * r_axis) / np.sqrt(8 * pi * kr * r_axis)
     return pressure
 
-def write_env(file_name, fc, z, ssp, bottom_HS=[1600., 1.8], cbounds=[0., 3000.]):
+def write_env(file_name, fc, z, ssp, bottom_HS=[1600., 1800.], cbounds=[0., 3000.]):
     """basic capability env writting"""
 
     fn = path.abspath(file_name)
@@ -55,6 +55,8 @@ def write_env(file_name, fc, z, ssp, bottom_HS=[1600., 1.8], cbounds=[0., 3000.]
     # back matter of env file
     bot_options = 'A'
     bottom_c, bottom_rho = bottom_HS
+    # change of dentisty to cgs for kraken
+    bottom_rho /= 1000.
 
     num_points = int(10 * np.ceil(z_end * fc / np.min(ssp)))
 
@@ -113,6 +115,9 @@ def read_mod(envpath):
         f.seek((7 + M) * lrec)
         k_c = np.fromfile(f, 'f4', count=2 * M)
         k = k_c[::2] + 1j * k_c[1::2]
+
+    # match units of denisty
+    phi *= np.sqrt(1000.)
 
     return phi, k, z
 

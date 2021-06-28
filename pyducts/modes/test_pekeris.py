@@ -69,7 +69,7 @@ norm_ana = np.sqrt(np.trapz(np.abs(phi_ana[:, water_i]) ** 2 / rho, axis=-1) * d
 phi_ana /= norm[:, None]
 
 # Kraken solution
-write_env('./envs/pekeris.env', fc, [0, D], [c, c], bottom_HS=[cb, rho_b / rho])
+write_env('./envs/pekeris.env', fc, [0, D], [c, c], bottom_HS=[cb, rho_b])
 run_kraken('./envs/pekeris.env')
 phi_krak, k_krak, z_krak = read_mod('./envs/pekeris.env')
 
@@ -77,8 +77,6 @@ phi_krak, k_krak, z_krak = read_mod('./envs/pekeris.env')
 wb_i = np.abs(np.imag(k_krak)) < 1e-6
 k_krak = np.real(k_krak[wb_i]).astype(dtype=np.float64)
 phi_krak = np.real(phi_krak[wb_i, :])
-# match units of denisty
-phi_krak *= np.sqrt(1000.)
 
 # test reverse iteration generation of modes
 decimation = 10

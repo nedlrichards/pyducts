@@ -101,13 +101,18 @@ c
 c     Initialize the parameters, acoustic field, and matrices.
 c
       implicit none
-      integer*8 mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,i,j
-      real*8 dir,dr,dz,pi,eps,omega,rmax,c0,k0,r,rp,rs,z,zs,
-     >   zmax,ri,freq,zmplt,zr,rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),
-     >   attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
-      complex*16 ci,u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8  ,intent(in)  :: mr,mz,mp
+      integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
+      real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),
+     > zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),
+     > f1(mz),f2(mz),f3(mz)
+      complex*16 ,intent(out) :: u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),
+     > r2(mz,mp),r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
 c
+      integer*8               :: i,j
+      real*8                  :: pi,eps,z,zs,zmax,ri,freq,zmplt,zr
+      complex*16              :: ci
+
       ci=cmplx(0.0,1.0,8)
       eps=1.0e-20
       pi=3.1415926535897932384626433832795d0
@@ -200,10 +205,14 @@ c
 c     Set up the profiles.
 c
       implicit none
-      integer*8 mz,nz,i
-      real*8 dz,eta,omega,rmax,c0,k0,rp,cw(mz),cb(mz),rhob(mz),
+      integer*8 mz,nz
+      real*8 dz,omega,rmax,c0,k0,rp,cw(mz),cb(mz),rhob(mz),
      >   attn(mz),alpw(mz),alpb(mz),ksqw(mz)
-      complex*16 ci,ksqb(mz)
+      complex*16 ksqb(mz)
+
+      integer*8 i
+      real*8 eta
+      complex*16 ci
 
       ci=cmplx(0.0,1.0,8)
       eta=0.01832338997198569352181968569348d0
@@ -230,8 +239,11 @@ c
 c     Profile reader and interpolator.
 c
       implicit none
-      integer*8 mz,nz,i,j,k,iold
-      real*8 dz,zi,profi,prof(mz)
+      integer*8 mz,nz
+      real*8 dz,zi,prof(mz)
+
+      integer*8 i,j,k,iold
+      real*8 zi,profi
 c
       do 1 i=1,nz+2
       prof(i)=-1.0
@@ -269,11 +281,14 @@ c
 c     The tridiagonal matrices.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz,jz,i,j,i1,i2
-      real*8 dz,k0,rhob(mz),f1(mz),f2(mz),f3(mz),alpw(mz),alpb(mz),
-     >   ksqw(mz),a1,a2,a3,c1,c2,c3,cfact,dfact
-      complex*16 d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8 mz,nz,mp,np,iz,jz
+      real*8 dz,k0,rhob(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
+      complex*16 ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
+    >            s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+
+      integer*8 i,j,i1,i2
+      real*8 a1,a2,a3,c1,c2,c3,cfact,dfact
+      complex*16 d1,d2,d3
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -380,10 +395,12 @@ c
 c     The tridiagonal solver.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz,i,j
-      real*8 eps
+      integer*8 mz,nz,mp,np,iz
       complex*16 u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
      >   s1(mz,mp),s2(mz,mp),s3(mz,mp)
+
+      real*8 eps
+      integer*8 i,j
       eps=1.0e-30
 c
       do 6 j=1,np
@@ -426,12 +443,14 @@ c
 c     Matrix updates.
 c
       implicit none
-      integer*8 mr,mz,nz,mp,np,iz,ib,jz,ns
-      real*8 dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),z,zb(mr),
-     >   attn(mz),cb(mz),rhob(mz),cw(mz),ksqw(mz),f1(mz),f2(mz),f3(mz),
-     >   alpw(mz),alpb(mz)
-      complex*16 ci,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
+      integer*8 mr,mz,nz,mp,np,iz,ib
+      real*8 dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),zb(mr),cw(mz),cb(mz),
+     >   rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
+      complex*16 ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
      >   s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8 jz,ns
+      real*8 z
+      complex*16 ci
 c
 c     Varying bathymetry.
 c
@@ -467,17 +486,20 @@ c
 c
       return
       end
+
       subroutine selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,
      >   alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
 c     The self-starter.
 c
       implicit none
-      integer*8 mz,nz,mp,np,ns,iz,is
-      real*8 zs,dr,dz,pi,k0,rhob(mz),alpw(mz),alpb(mz),dis,si,
-     >   f1(mz),f2(mz),f3(mz),ksqw(mz)
-      complex*16 u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
+      integer*8 mz,nz,mp,np,ns,iz
+      real*8 zs,dr,dz,k0,rhob(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
+      complex*16 ksq(mz),ksqb(mz),u(mz),v(mz),r1(mz,mp),r2(mz,mp),
      >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+
+      integer*8 is
+      real*8 pi,dis,si
 c
 c     Conditions for the delta function.
 c
@@ -514,8 +536,12 @@ c     Output transmission loss line
 c
       implicit none
       integer*8 mz,ir
-      real*8 dir,eps,r,f3(mz)
-      complex*16 ur,u(mz),pout
+      real*8 dir,r,f3(mz)
+      complex*16 u(mz)
+
+      real*8 eps
+      complex*16 ur,pout
+
       eps=1e-20
 c
       ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
@@ -530,9 +556,14 @@ c
 c     Output transmission loss.
 c
       implicit none
-      integer*8 mz,ndz,nzplt,lz,i,j
-      real*8 eps,r,f3(mz)
-      complex*16 ur,u(mz),poutg(mz)
+      integer*8 mz,ndz,nzplt,lz
+      real*8 r,f3(mz)
+      complex*16 u(mz)
+
+      integer*8 i,j
+      real*8 eps
+      complex*16 ur,poutg(mz)
+
       eps=1e-20
 
       j=0
@@ -552,10 +583,14 @@ c
 c     The coefficients of the rational approximation.
 c
       implicit none
-      integer*8 mp,np,ns,ip,i,j,n
-      real*8 nu,k0,dr,alp,bin(2*mp,2*mp),fact(2*mp),pi,sig
+      integer*8 mp,np,ns,ip
+      real*8 k0,dr
+      complex*16 pd1(mp),pd2(mp)
+
+      real*8 nu,alp,bin(2*mp,2*mp),fact(2*mp),pi,sig
+      integer*8 i,j,n
       complex*16 ci,z1,dg(2*mp),dh1(2*mp),dh2(2*mp),dh3(2*mp),
-     >   a(2*mp,2*mp),b(2*mp),pd1(mp),pd2(mp)
+     >   a(2*mp,2*mp),b(2*mp)
 
       pi=3.1415926535897932384626433832795d0
       ci=cmplx(0.0d0,1.0d0,8)
@@ -657,7 +692,7 @@ c
 c     The operator function.
 c
       implicit none
-      real*8 alp,sig,x,nu
+      real*8 sig,x,alp,nu
       complex*16 ci,g
 
       ci=cmplx(0.0d0,1.0d0,8)
@@ -671,9 +706,12 @@ c
 c     The derivatives of the operator function at x=0.
 c
       implicit none
-      integer*8 m,n,i,j
-      real*8 sig,alp,bin(m,m),nu,exp1,exp2,exp3
-      complex*16 ci,dg(m),dh1(m),dh2(m),dh3(m)
+      integer*8 m,n
+      real*8 sig,alp,bin(m,m),nu
+      complex*16 dg(m),dh1(m),dh2(m),dh3(m)
+      integer*8 i,j
+      real*8 exp1,exp2,exp3
+      complex*16 ci
 c
       ci=cmplx(0.0d0,1.0d0,8)
 c
@@ -709,8 +747,9 @@ c
 c     Gaussian elimination.
 c
       implicit none
-      integer*8 m,n,i,j,k
+      integer*8 m,n
       complex*16 a(m,m),b(m)
+      integer*8 i,j,k
 c
 c     Downward elimination.
 c
@@ -747,9 +786,12 @@ c
 c     Rows are interchanged for stability.
 c
       implicit none
-      integer*8 m,n,i,j,i0
+      integer*8 m,n,i
+      complex*16 a(m,m),b(m)
+
+      integer*8 j,i0
       real*8 amp0,amp
-      complex*16 temp,a(m,m),b(m)
+      complex*16 temp
 c
       i0=i
       amp0=cdabs(a(i,i))
@@ -779,9 +821,12 @@ c
 c     The root-finding subroutine.
 c
       implicit none
-      integer*8 n,m,i,k
+      integer*8 n,m
+      complex*16 a(m),z(m)
+
+      integer*8 i,k
       real*8 err
-      complex*16 a(m),z(m),root
+      complex*16 root
 c
       if(n.eq.1)then
       z(1)=-a(1)/a(2)
@@ -828,9 +873,13 @@ c     This subroutine finds a root of a polynomial of degree n > 2
 c     by Laguerres method.
 c
       implicit none
-      integer*8 m,n,i,nter,iter,jter
-      real*8 amp1,amp2,rn,eps,err
-      complex*16 a(m),az(50),azz(50),z,dz,p,pz,pzz,f,g,h,ci
+      integer*8 m,n,nter
+      real*8 err
+      complex*16 a(m),z
+
+      integer*8 i,iter,jter
+      real*8 amp1,amp2,rn,eps
+      complex*16 az(50),azz(50),dz,p,pz,pzz,f,g,h,ci
 c
       ci=cmplx(0.0d0,1.0d0,8)
       eps=1.0d-20

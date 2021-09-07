@@ -1,1 +1,1 @@
-from .ram_wrapper import run_ram, write_ram_in, read_grid
+from .ram_wrapper import run_ram, read_grid, read_line, RamIn

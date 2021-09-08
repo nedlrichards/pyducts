@@ -18,8 +18,7 @@ c
 c     Version 1.4 contains a correction to a minor bug in subroutine
 c     guerre that Dave King noticed (amp1 and amp2 were declared
 c     twice) and a few other minor improvements.
-c
-c     Version 1.3 contains a new root-finding subroutine.
+c c     Version 1.3 contains a new root-finding subroutine.
 c
 c     Version 1.2 contains a minor modification. The output to tl.grid
 c     is no longer zeroed out along the ocean bottom. This was done in
@@ -46,8 +45,8 @@ c
       implicit none
       integer*8 mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir
       complex*16 ksq,ksqb,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2
-      real*8 dir,dr,dz,omega,rmax,c0,k0,r,rp,rs
-      real*8 rb,zb,cw,cb,rhob,attn,alpw,alpb,ksqw,f1,f2,f3
+      real*8 dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,attn,
+     >  alpw,alpb,ksqw,f1,f2,f3
 c
 c     mr=bathymetry points, mz=depth grid, mp=pade terms.
 c
@@ -93,22 +92,27 @@ c
       stop
       end
 
-      subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,
-     >   dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,
-     >   rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,
-     >   s3,pd1,pd2)
+      subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,
+     > ib,ir,dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,
+     > rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,
+     > r3,s1,s2,s3,pd1,pd2)
 c
 c     Initialize the parameters, acoustic field, and matrices.
 c
       implicit none
       integer*8  ,intent(in)  :: mr,mz,mp
       integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
-      real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),
-     > zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),
-     > f1(mz),f2(mz),f3(mz)
-      complex*16 ,intent(out) :: u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),
-     > r2(mz,mp),r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
-c
+      real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,
+     >                           rp,rs,rb(mr),zb(mr),cw(mz),
+     >                           cb(mz),rhob(mz),attn(mz),alpw(mz),
+     >                           alpb(mz),ksqw(mz),
+     >                           f1(mz),f2(mz),f3(mz)
+
+      complex*16 ,intent(out) :: u(mz),v(mz),ksq(mz),ksqb(mz),
+     >                           r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                           s1(mz,mp),s2(mz,mp),s3(mz,mp),
+     >                           pd1(mp),pd2(mp)
+
       integer*8               :: i,j
       real*8                  :: pi,eps,z,zs,zmax,ri,freq,zmplt,zr
       complex*16              :: ci
@@ -205,14 +209,16 @@ c
 c     Set up the profiles.
 c
       implicit none
-      integer*8 mz,nz
-      real*8 dz,omega,rmax,c0,k0,rp,cw(mz),cb(mz),rhob(mz),
-     >   attn(mz),alpw(mz),alpb(mz),ksqw(mz)
-      complex*16 ksqb(mz)
+      integer*8  ,intent(in)  :: mz,nz
+      real*8     ,intent(in)  :: dz,omega,rmax,c0,k0
+      real*8     ,intent(out) :: rp,cw(mz),cb(mz),rhob(mz),
+     >                           attn(mz),alpw(mz),alpb(mz),
+     >                           ksqw(mz)
+      complex*16 ,intent(out) :: ksqb(mz)
 
-      integer*8 i
-      real*8 eta
-      complex*16 ci
+      integer*8               :: i
+      real*8                  :: eta
+      complex*16              :: ci
 
       ci=cmplx(0.0,1.0,8)
       eta=0.01832338997198569352181968569348d0
@@ -239,11 +245,12 @@ c
 c     Profile reader and interpolator.
 c
       implicit none
-      integer*8 mz,nz
-      real*8 dz,zi,prof(mz)
+      integer*8 ,intent(in)  :: mz,nz
+      real*8    ,intent(in)  :: dz
+      real*8    ,intent(out) :: prof(mz)
 
-      integer*8 i,j,k,iold
-      real*8 zi,profi
+      integer*8              :: i,j,k,iold
+      real*8                 :: zi,profi
 c
       do 1 i=1,nz+2
       prof(i)=-1.0
@@ -276,19 +283,25 @@ c
       end
 
       subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,
-     >   ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+     >                ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
 c     The tridiagonal matrices.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz,jz
-      real*8 dz,k0,rhob(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
-      complex*16 ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),s1(mz,mp),
-    >            s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8     ,intent(in)    :: mz,nz,mp,np,iz,jz
+      real*8        ,intent(in)    :: dz,k0,rhob(mz),alpw(mz),
+     >                                alpb(mz),ksqw(mz)
+      real*8        ,intent(out)   :: f1(mz),f2(mz),f3(mz)
 
-      integer*8 i,j,i1,i2
-      real*8 a1,a2,a3,c1,c2,c3,cfact,dfact
-      complex*16 d1,d2,d3
+      complex*16    ,intent(in)    :: ksqb(mz),pd1(mp),pd2(mp)
+      complex*16    ,intent(out)   :: ksq(mz), r1(mz,mp),r2(mz,mp),
+     >                                r3(mz,mp),s1(mz,mp),
+     >                                s2(mz,mp),s3(mz,mp)
+
+      integer*8                    :: i,j,i1,i2
+      real*8                       :: a1,a2,a3,c1,c2,c3,
+     >                                cfact,dfact,rfact
+      complex*16                   :: d1,d2,d3
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -395,12 +408,14 @@ c
 c     The tridiagonal solver.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz
-      complex*16 u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
-     >   s1(mz,mp),s2(mz,mp),s3(mz,mp)
+      integer*8   ,intent(in)    :: mz,nz,mp,np,iz
+      complex*16  ,intent(in)    :: r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                              s1(mz,mp),s2(mz,mp),s3(mz,mp)
+      complex*16  ,intent(inout) :: u(mz),v(mz)
 
-      real*8 eps
-      integer*8 i,j
+      real*8                     :: eps
+      integer*8                  :: i,j
+
       eps=1.0e-30
 c
       do 6 j=1,np
@@ -443,14 +458,21 @@ c
 c     Matrix updates.
 c
       implicit none
-      integer*8 mr,mz,nz,mp,np,iz,ib
-      real*8 dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),zb(mr),cw(mz),cb(mz),
-     >   rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
-      complex*16 ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
-     >   s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
-      integer*8 jz,ns
-      real*8 z
-      complex*16 ci
+      integer*8 ,intent(in)    :: mr,mz,nz,mp,np
+      integer*8 ,intent(out)   :: iz,ib
+      real*8                   :: dr,dz,omega,rmax,c0,k0,r,rb(mr),
+     >                            zb(mr),f1(mz),f2(mz),f3(mz)
+      real*8                   :: rp,rs
+      real*8                   :: cw(mz),cb(mz),rhob(mz),attn(mz),
+     >                            alpw(mz),alpb(mz),ksqw(mz)
+      complex*16               :: ksq(mz),ksqb(mz),
+     >                            r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                            s1(mz,mp),s2(mz,mp),s3(mz,mp)
+      complex*16               :: pd1(mp),pd2(mp)
+
+      integer*8                :: jz,ns
+      real*8                   :: z
+      complex*16               :: ci
 c
 c     Varying bathymetry.
 c
@@ -493,10 +515,15 @@ c
 c     The self-starter.
 c
       implicit none
-      integer*8 mz,nz,mp,np,ns,iz
-      real*8 zs,dr,dz,k0,rhob(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
-      complex*16 ksq(mz),ksqb(mz),u(mz),v(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8 ,intent(in)     :: mz,nz,mp,np,ns,iz
+      real*8    ,intent(in)     :: zs,dr,dz,k0,rhob(mz),alpw(mz),
+     >                             alpb(mz),ksqw(mz)
+      real*8    ,intent(out)    :: f1(mz),f2(mz),f3(mz)
+      complex*16 ,intent(in)    :: ksqb(mz)
+      complex*16 ,intent(inout) :: ksq(mz),v(mz),u(mz)
+      complex*16 ,intent(out)   :: pd1(mp),pd2(mp),
+     >                             r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                             s1(mz,mp),s2(mz,mp),s3(mz,mp)
 
       integer*8 is
       real*8 pi,dis,si
@@ -535,12 +562,12 @@ c
 c     Output transmission loss line
 c
       implicit none
-      integer*8 mz,ir
-      real*8 dir,r,f3(mz)
-      complex*16 u(mz)
+      integer*8  ,intent(in) :: mz,ir
+      real*8     ,intent(in) :: dir,r,f3(mz)
+      complex*16 ,intent(in) :: u(mz)
 
-      real*8 eps
-      complex*16 ur,pout
+      real*8                 :: eps
+      complex*16             :: ur,pout
 
       eps=1e-20
 c
@@ -556,13 +583,13 @@ c
 c     Output transmission loss.
 c
       implicit none
-      integer*8 mz,ndz,nzplt,lz
-      real*8 r,f3(mz)
-      complex*16 u(mz)
+      integer*8  ,intent(in) :: mz,ndz,nzplt,lz
+      real*8     ,intent(in) :: r,f3(mz)
+      complex*16 ,intent(in) :: u(mz)
 
-      integer*8 i,j
-      real*8 eps
-      complex*16 ur,poutg(mz)
+      integer*8              :: i,j
+      real*8                 :: eps
+      complex*16             :: ur,poutg(mz)
 
       eps=1e-20
 
@@ -583,14 +610,16 @@ c
 c     The coefficients of the rational approximation.
 c
       implicit none
-      integer*8 mp,np,ns,ip
-      real*8 k0,dr
-      complex*16 pd1(mp),pd2(mp)
+      integer*8  ,intent(in)  :: mp,np,ns,ip
+      real*8     ,intent(in)  :: k0,dr
+      complex*16 ,intent(out) :: pd1(mp),pd2(mp)
 
-      real*8 nu,alp,bin(2*mp,2*mp),fact(2*mp),pi,sig
-      integer*8 i,j,n
-      complex*16 ci,z1,dg(2*mp),dh1(2*mp),dh2(2*mp),dh3(2*mp),
-     >   a(2*mp,2*mp),b(2*mp)
+      real*8                  :: nu,alp,bin(2*mp,2*mp),
+     >                           fact(2*mp),pi,sig
+      integer*8               :: i,j,n
+      complex*16              :: ci,z1,dg(2*mp),dh1(2*mp),
+     >                           dh2(2*mp),dh3(2*mp),
+     >                           a(2*mp,2*mp),b(2*mp)
 
       pi=3.1415926535897932384626433832795d0
       ci=cmplx(0.0d0,1.0d0,8)
@@ -687,13 +716,13 @@ c
       return
       end
 
-      function g(sig,x,alp,nu)
+      complex function g(sig,x,alp,nu)
 c
 c     The operator function.
 c
       implicit none
-      real*8 sig,x,alp,nu
-      complex*16 ci,g
+      real*8 ,intent(in) :: sig,x,alp,nu
+      complex*16         :: ci
 
       ci=cmplx(0.0d0,1.0d0,8)
       g=(1.0d0-nu*x)**2*cdexp(alp*log(1.0d0+x)+
@@ -706,12 +735,13 @@ c
 c     The derivatives of the operator function at x=0.
 c
       implicit none
-      integer*8 m,n
-      real*8 sig,alp,bin(m,m),nu
-      complex*16 dg(m),dh1(m),dh2(m),dh3(m)
-      integer*8 i,j
-      real*8 exp1,exp2,exp3
-      complex*16 ci
+      integer*8  ,intent(in)  :: m,n
+      real*8     ,intent(in)  :: sig,alp,bin(m,m),nu
+      complex*16 ,intent(out) :: dg(m),dh1(m),dh2(m),dh3(m)
+
+      integer*8               :: i,j
+      real*8                  :: exp1,exp2,exp3
+      complex*16              :: ci
 c
       ci=cmplx(0.0d0,1.0d0,8)
 c
@@ -747,9 +777,10 @@ c
 c     Gaussian elimination.
 c
       implicit none
-      integer*8 m,n
-      complex*16 a(m,m),b(m)
-      integer*8 i,j,k
+      integer*8  ,intent(in)    :: m,n
+      complex*16 ,intent(inout) :: a(m,m),b(m)
+
+      integer*8                 :: i,j,k
 c
 c     Downward elimination.
 c
@@ -786,12 +817,12 @@ c
 c     Rows are interchanged for stability.
 c
       implicit none
-      integer*8 m,n,i
-      complex*16 a(m,m),b(m)
+      integer*8  ,intent(in)    :: m,n,i
+      complex*16 ,intent(inout) :: a(m,m),b(m)
 
-      integer*8 j,i0
-      real*8 amp0,amp
-      complex*16 temp
+      integer*8                 :: j,i0
+      real*8                    :: amp0,amp
+      complex*16                :: temp
 c
       i0=i
       amp0=cdabs(a(i,i))
@@ -821,12 +852,12 @@ c
 c     The root-finding subroutine.
 c
       implicit none
-      integer*8 n,m
-      complex*16 a(m),z(m)
+      integer*8  ,intent(in)  ::  n,m
+      complex*16 ,intent(out) ::  a(m),z(m)
 
-      integer*8 i,k
-      real*8 err
-      complex*16 root
+      integer*8               :: i,k
+      real*8                  :: err
+      complex*16              :: root
 c
       if(n.eq.1)then
       z(1)=-a(1)/a(2)
@@ -873,13 +904,14 @@ c     This subroutine finds a root of a polynomial of degree n > 2
 c     by Laguerres method.
 c
       implicit none
-      integer*8 m,n,nter
-      real*8 err
-      complex*16 a(m),z
+      integer*8  ,intent(in)  :: m,n,nter
+      real*8     ,intent(in)  :: err
+      complex*16 ,intent(in)  :: a(m)
+      complex*16 ,intent(out) :: z
 
-      integer*8 i,iter,jter
-      real*8 amp1,amp2,rn,eps
-      complex*16 az(50),azz(50),dz,p,pz,pzz,f,g,h,ci
+      integer*8               :: i,iter,jter
+      real*8                  :: amp1,amp2,rn,eps
+      complex*16              :: az(50),azz(50),dz,p,pz,pzz,f,g,h,ci
 c
       ci=cmplx(0.0d0,1.0d0,8)
       eps=1.0d-20

@@ -26,7 +26,7 @@ all: $(PROG_RAM) $(PROG_TYPED) $(PROG_RAM_V1)
 $(PROG_RAM): $(RAM)
 	$(LD) -o $(prefix)$@ $^
 
-$(PROG_RAM_V1): $(RAM_V1)
+$(PROG_RAM_V1): $(RAM_V1) $(OBJS)
 	$(LD) -o $(prefix)$@ $^
 
 $(PROG_TYPED): $(RAM_TYPED) $(OBJS)

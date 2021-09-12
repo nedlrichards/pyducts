@@ -4,32 +4,41 @@ MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 FC := gfortran
 LD := $(FC)
 RM := rm -f
+prefix := ../bin/
+
 # list of all source files
+SRCS := cmplx_roots_sg.f90 constants.f90 pade_coeffs.f90
+RAM_TYPED := ram_typed.f
+PROG_TYPED := ram_typed
 
-PADE := cmplx_roots_sg.o constants.o pade_coeffs.o
-PADETEST := pade_test.o
-PROG := ../bin/pade_test
+RAM := ../original_ram/ram15.f
+PROG_RAM := ram
 
-RAMOBJ := ../ram_original/ram15.o
-RAMPROG := ../bin/ram
+RAM_V1 := ram_v1.f
+PROG_RAM_V1 := ram_v1
 
-RAMTOBJ := ram_typed.o
-RAMTPROG := ../bin/ram_typed
+OBJS := $(addsuffix .o, $(SRCS))
 
-all: $(PROG) $(RAMPROG) $(RAMTPROG)
+.PHONY: all clean
 
-$(PROG): $(PADE) $(PADETEST)
-	gfortran -o $@ $^
-$(RAMPROG): $(RAMOBJ)
-	gfortran -o $@ $^
-$(RAMTPROG): $(PADE) $(RAMTOBJ)
-	gfortran -o $@ $^
+all: $(PROG_RAM) $(PROG_TYPED) $(PROG_RAM_V1)
 
-$(PADE): %.o: %.f90
-	gfortran -c -o $@ $<
-$(PADETEST): %.o: %.f90
-	gfortran -c -o $@ $<
-$(RAMOBJ): %.o: %.f
-	gfortran -c -o $@ $<
-$(RAMTOBJ): %.o: %.f
-	gfortran -c -o $@ $<
+$(PROG_RAM): $(RAM)
+	$(LD) -o $(prefix)$@ $^
+
+$(PROG_RAM_V1): $(RAM_V1)
+	$(LD) -o $(prefix)$@ $^
+
+$(PROG_TYPED): $(RAM_TYPED) $(OBJS)
+	$(LD) -o $(prefix)$@ $^
+
+$(OBJS): %.o: %
+	$(FC) -c -o $@ $<
+
+ram_typed.f.o: pade_coeffs.f90.o
+pade_coeffs.f90.o: cmplx_roots_sg.f90.o constants.f90.o
+
+$(OBJS): $(MAKEFILE_LIST)
+
+clean:
+	$(RM) $(filter %.o, $(OBJS)) $(wildcard *.mod) $(prefix)$(PROG_TYPED) $(prefix)$(PROG_RAM)

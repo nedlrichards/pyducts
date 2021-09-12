@@ -12,27 +12,38 @@ def run_ram():
     # TODO: see if status gives anything
     status = subprocess.run(run_cmd, check=True)
 
-def read_grid():
+def read_grid(is_standard=False):
     """read tl.grid"""
     with open("tl.grid", "rb") as fid:
         # read header
         # fortran adds a field at every write
         temp = struct.unpack("i", fid.read(4))
-        freq = struct.unpack("d", fid.read(8))[0]
-        z_src = struct.unpack("d", fid.read(8))[0]
-        z_rcr = struct.unpack("d", fid.read(8))[0]
-        r_max = struct.unpack("d", fid.read(8))[0]
-        dr = struct.unpack("d", fid.read(8))[0]
-        ndr = struct.unpack("q", fid.read(8))[0]
-        z_max = struct.unpack("d", fid.read(8))[0]
-        dz = struct.unpack("d", fid.read(8))[0]
-        ndz = struct.unpack("q", fid.read(8))[0]
-        zmax_plot = struct.unpack("d", fid.read(8))[0]
-        c0 = struct.unpack("d", fid.read(8))[0]
-        num_p = struct.unpack("q", fid.read(8))[0]
-        num_s = struct.unpack("q", fid.read(8))[0]
-        range_s_max = struct.unpack("d", fid.read(8))[0]
-        num_zplot = struct.unpack("q", fid.read(8))[0]
+
+        if is_standard:
+            num_bytes = 4
+            int_type = "i"
+            float_type = "f"
+        else:
+            num_bytes = 8
+            int_type = "q"
+            float_type = "d"
+
+        freq = struct.unpack(float_type, fid.read(num_bytes))[0]
+        z_src = struct.unpack(float_type, fid.read(num_bytes))[0]
+        z_rcr = struct.unpack(float_type, fid.read(num_bytes))[0]
+        r_max = struct.unpack(float_type, fid.read(num_bytes))[0]
+        dr = struct.unpack(float_type, fid.read(num_bytes))[0]
+        ndr = struct.unpack(int_type, fid.read(num_bytes))[0]
+        z_max = struct.unpack(float_type, fid.read(num_bytes))[0]
+        dz = struct.unpack(float_type, fid.read(num_bytes))[0]
+        ndz = struct.unpack(int_type, fid.read(num_bytes))[0]
+        zmax_plot = struct.unpack(float_type, fid.read(num_bytes))[0]
+        c0 = struct.unpack(float_type, fid.read(num_bytes))[0]
+        num_p = struct.unpack(int_type, fid.read(num_bytes))[0]
+        num_s = struct.unpack(int_type, fid.read(num_bytes))[0]
+        range_s_max = struct.unpack(float_type, fid.read(num_bytes))[0]
+        num_zplot = struct.unpack(int_type, fid.read(num_bytes))[0]
+
         # fortran adds a field at every write
         temp = struct.unpack("i", fid.read(4))
 
@@ -41,21 +52,28 @@ def read_grid():
         zplot = np.arange(num_zplot) * ndz * dz
         rplot = (np.arange(num_r_read) + 1) * ndr * dr
 
-        cmpx_TL = np.zeros((num_zplot, num_r_read)) \
-                + 1j * np.zeros((num_zplot, num_r_read))
+        p_out = []
 
         for i in np.arange(num_r_read):
             temp = struct.unpack("i", fid.read(4))
-            TL = np.fromfile(fid, count=2 * num_zplot)
-            cmpx_TL[:, i] = TL[::2] + 1j * TL[1::2]
+            if is_standard:
+                TL = np.fromfile(fid, count=num_zplot, dtype=np.float32)
+                p_out.append(TL)
+            else:
+                p = np.fromfile(fid, count=2 * num_zplot, dtype=np.float64)
+                p_out.append(p[::2] + 1j * p[1::2])
             temp = struct.unpack("i", fid.read(4))
-    return zplot, rplot, cmpx_TL
+        p_out = np.array(p_out)
 
-def read_line():
+    return zplot, rplot, p_out
+
+def read_line(is_standard=False):
     """read tl.line output by ram"""
     line = np.loadtxt("tl.line")
-    #p_line = line[:, 1]
-    p_line = line[:, 1] + 1j * line[:, 2]
+    if is_standard:
+        p_line = line[:, 1]
+    else:
+        p_line = line[:, 1] + 1j * line[:, 2]
     r_line = line[:, 0]
     return r_line, p_line
 
@@ -115,7 +133,6 @@ class RamIn:
         self.attn_sponge = [0.5, 10]
 
 
-
     def write_frontmatter(self):
         """write frontmatter common to all profiles"""
 
@@ -129,6 +146,7 @@ class RamIn:
             # bathy depth
             writer.write(f"0.0 {self.z_bottom:.4f}\n" )
             writer.write("-1 -1\n" )
+
 
     def write_profile(self, rprof, z, ssp):
         """Add profile to ram file"""
@@ -157,5 +175,3 @@ class RamIn:
             writer.write(f"{self.z_hs:.4f} {self.attn_sponge[0]:.4f}\n" )
             writer.write(f"{self.z_sponge:.4f} {self.attn_sponge[1]:.4f}\n" )
             writer.write("-1 -1\n" )
-
-

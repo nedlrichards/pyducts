@@ -1,48 +1,6 @@
       program ram
-c
-c     ******************************************************************
-c     ***** Range-dependent Acoustic Model, Version 1.5, 13-Sep-00 *****
-c     ******************************************************************
-c
-c     This code was developed by Michael D. Collins at the Naval
-c     Research Laboratory in Washington, DC. It solves range-dependent
-c     ocean acoustics problems with the split-step Pade algorithm
-c     [M. D. Collins, J. Acoust. Soc. Am. 93, 1736-1742 (1993)]. A
-c     users guide and updates of the code are available via anonymous
-c     ftp from ram.nrl.navy.mil.
-c
-c     Version 1.5 contains a correction to a bug in the dimension of
-c     quantities passed to subroutines fndrt and guerre that Laurie
-c     Fialkowski noticed.
-c
-c     Version 1.4 contains a correction to a minor bug in subroutine
-c     guerre that Dave King noticed (amp1 and amp2 were declared
-c     twice) and a few other minor improvements.
-c c     Version 1.3 contains a new root-finding subroutine.
-c
-c     Version 1.2 contains a minor modification. The output to tl.grid
-c     is no longer zeroed out along the ocean bottom. This was done in
-c     previous versions so that the ocean bottom would be highlighted
-c     in graphical displays. The graphics codes ramclr, ramctr, and
-c     ramcc read in the bathymetry from ram.in and plot the ocean
-c     bottom directly.
-c
-c     Version 1.1 contains two improvements:
-c
-c     (1) An improved self starter. Stability is improved by using the
-c     factor (1-X)**2 instead of (1+X)**2 to smooth the delta function.
-c     The factor (1+X)**2 is nearly singular for some problems involving
-c     deep water and/or weak attenuation. Numerical problems associated
-c     with this singularity were detected by Eddie Scheer of Woods Hole
-c     Oceanographic Institute.
-c
-c     (2) Elimination of underflow problems. A very small number is
-c     added to the solution in subroutine solve to prevent underflow,
-c     which can adversely affect run time on some computers. This
-c     improvement was suggested by Ed McDonald of the SACLANT Undersea
-c     Research Centre.
-c
       implicit none
+
       integer*8 mr,mz,nz,mp,np,ns,mdr,ndr,ndz,iz,nzplt,lz,ib,ir
       complex*16 ksq,ksqb,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2
       real*8 dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,attn,
@@ -99,6 +57,8 @@ c
 c
 c     Initialize the parameters, acoustic field, and matrices.
 c
+      use pade_coeffs   ,only : pe_pade
+      use constants     ,only : pi
       implicit none
       integer*8  ,intent(in)  :: mr,mz,mp
       integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
@@ -114,21 +74,15 @@ c
      >                           pd1(mp),pd2(mp)
 
       integer*8               :: i,j
-      real*8                  :: pi,eps,z,zs,zmax,ri,freq,zmplt,zr
-      complex*16              :: ci
+      real*8                  :: eps,z,zs,zmax,ri,freq,zmplt,zr
 
-      ci=cmplx(0.0,1.0,8)
       eps=1.0e-20
-      pi=3.1415926535897932384626433832795d0
 
       read(1,*)
       read(1,*)freq,zs,zr
       read(1,*)rmax,dr,ndr
       read(1,*)zmax,dz,ndz,zmplt
       read(1,*)c0,np,ns,rs
-
-C     mbp: adding grid size info to the TL output file
-C      write( 3 ) dz, ndz, zmplt, dr, ndr, rmax, freq, zs
 
 c
       i=1
@@ -196,7 +150,7 @@ c
 c
 c     The propagation matrices.
 c
-      call epade(mp,np,ns,1_8,k0,dr,pd1,pd2)
+      call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 c
@@ -208,6 +162,7 @@ c
 c
 c     Set up the profiles.
 c
+      use constants ,only : i_
       implicit none
       integer*8  ,intent(in)  :: mz,nz
       real*8     ,intent(in)  :: dz,omega,rmax,c0,k0
@@ -218,9 +173,7 @@ c
 
       integer*8               :: i
       real*8                  :: eta
-      complex*16              :: ci
 
-      ci=cmplx(0.0,1.0,8)
       eta=0.01832338997198569352181968569348d0
 c
       call zread(mz,nz,dz,cw)
@@ -232,7 +185,7 @@ c
 c
     1 do 2 i=1,nz+2
       ksqw(i)=(omega/cw(i))**2-k0**2
-      ksqb(i)=((omega/cb(i))*(1.0+ci*eta*attn(i)))**2-k0**2
+      ksqb(i)=((omega/cb(i))*(1.0+i_*eta*attn(i)))**2-k0**2
       alpw(i)=sqrt(cw(i)/c0)
       alpb(i)=sqrt(rhob(i)*cb(i)/c0)
     2 continue
@@ -292,7 +245,6 @@ c
       real*8        ,intent(in)    :: dz,k0,rhob(mz),alpw(mz),
      >                                alpb(mz),ksqw(mz)
       real*8        ,intent(out)   :: f1(mz),f2(mz),f3(mz)
-
       complex*16    ,intent(in)    :: ksqb(mz),pd1(mp),pd2(mp)
       complex*16    ,intent(out)   :: ksq(mz), r1(mz,mp),r2(mz,mp),
      >                                r3(mz,mp),s1(mz,mp),
@@ -457,6 +409,8 @@ c
 c
 c     Matrix updates.
 c
+      use constants ,only : i_
+      use pade_coeffs   ,only : pe_pade
       implicit none
       integer*8 ,intent(in)    :: mr,mz,nz,mp,np
       integer*8 ,intent(out)   :: iz,ib
@@ -472,12 +426,10 @@ c
 
       integer*8                :: jz,ns
       real*8                   :: z
-      complex*16               :: ci
 c
 c     Varying bathymetry.
 c
 
-      ci=cmplx(0.0d0,1.0d0,8)
       if(r.ge.rb(ib+1))ib=ib+1
       jz=iz
       z=zb(ib)+(r+0.5*dr-rb(ib))*(zb(ib+1)-zb(ib))/(rb(ib+1)-rb(ib))
@@ -501,7 +453,7 @@ c
       if(r.ge.rs)then
       ns=0
       rs=2.0*rmax
-      call epade(mp,np,ns,1_8,k0,dr,pd1,pd2)
+      call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       end if
@@ -514,6 +466,8 @@ c
 c
 c     The self-starter.
 c
+      use pade_coeffs   ,only : pe_pade
+      use constants ,only : i_, pi
       implicit none
       integer*8 ,intent(in)     :: mz,nz,mp,np,ns,iz
       real*8    ,intent(in)     :: zs,dr,dz,k0,rhob(mz),alpw(mz),
@@ -525,12 +479,11 @@ c
      >                             r1(mz,mp),r2(mz,mp),r3(mz,mp),
      >                             s1(mz,mp),s2(mz,mp),s3(mz,mp)
 
-      integer*8 is
-      real*8 pi,dis,si
+      integer*8                 :: is
+      real*8                    :: dis,si
 c
 c     Conditions for the delta function.
 c
-      pi=3.1415926535897932384626433832795d0
       si=1.0+zs/dz
       is=int(si,8)
       dis=si-float(is)
@@ -547,9 +500,9 @@ c
       call solve(mz,nz,mp,1_8,iz,u,v,r1,r2,r3,s1,s2,s3)
 
 c
-c     Apply the operator (1-X)**2*(1+X)**(-1/4)*exp(ci*k0*r*sqrt(1+X)).
+c     Apply the operator (1-X)**2*(1+X)**(-1/4)*exp(i_*k0*r*sqrt(1+X)).
 c
-      call epade(mp,np,ns,2_8,k0,dr,pd1,pd2)
+      call pe_pade(mp,np,ns,2_8,k0,dr,pd1,pd2)
       call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,ksq,ksqw,ksqb,
      >   f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
       call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
@@ -602,380 +555,5 @@ c     tlg(j)=-20.0*log10(abs(ur)+eps)+10.0*log10(r+eps)
     1 continue
       write(3)(poutg(j),j=1,lz)
 
-      return
-      end
-
-      subroutine epade(mp,np,ns,ip,k0,dr,pd1,pd2)
-c
-c     The coefficients of the rational approximation.
-c
-      implicit none
-      integer*8  ,intent(in)  :: mp,np,ns,ip
-      real*8     ,intent(in)  :: k0,dr
-      complex*16 ,intent(out) :: pd1(mp),pd2(mp)
-
-      real*8                  :: nu,alp,bin(2*mp,2*mp),
-     >                           fact(2*mp),pi,sig
-      integer*8               :: i,j,n
-      complex*16              :: ci,z1,dg(2*mp),dh1(2*mp),
-     >                           dh2(2*mp),dh3(2*mp),
-     >                           a(2*mp,2*mp),b(2*mp)
-
-      pi=3.1415926535897932384626433832795d0
-      ci=cmplx(0.0d0,1.0d0,8)
-      sig=k0*dr
-      n=2*np
-c
-      if(ip.eq.1)then
-      nu=0.0d0
-      alp=0.0d0
-      else
-      nu=1.0d0
-      alp=-0.25d0
-      end if
-c
-c     The factorials.
-c
-      fact(1)=1.0d0
-      do 1 i=2,n
-      fact(i)=dfloat(i)*fact(i-1)
-    1 continue
-c
-c     The binomial coefficients.
-c
-      do 2 i=1,n+1
-      bin(i,1)=1.0d0
-      bin(i,i)=1.0d0
-    2 continue
-      do 4 i=3,n+1
-      do 3 j=2,i-1
-      bin(i,j)=bin(i-1,j-1)+bin(i-1,j)
-    3 continue
-    4 continue
-c
-      do 6 i=1,n
-      do 5 j=1,n
-      a(i,j)=0.0d0
-    5 continue
-    6 continue
-c
-c     The accuracy constraints.
-c
-      call deriv(2*mp,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)
-c
-      do 7 i=1,n
-      b(i)=dg(i+1)
-    7 continue
-      do 9 i=1,n
-      if(2*i-1.le.n)a(i,2*i-1)=fact(i)
-      do 8 j=1,i
-      if(2*j.le.n)a(i,2*j)=-bin(i+1,j+1)*fact(j)*dg(i-j+1)
-    8 continue
-    9 continue
-c
-c     The stability constraints.
-c
-      if(ns.ge.1)then
-      z1=-3.0d0
-      b(n)=-1.0d0
-      do 10 j=1,np
-      a(n,2*j-1)=z1**j
-      a(n,2*j)=0.0d0
-   10 continue
-      end if
-c
-      if(ns.ge.2)then
-      z1=-1.5d0
-      b(n-1)=-1.0d0
-      do 11 j=1,np
-      a(n-1,2*j-1)=z1**j
-      a(n-1,2*j)=0.0d0
-   11 continue
-      end if
-c
-      call gauss(2*mp,n,a,b)
-c
-      dh1(1)=1.0d0
-      do 12 j=1,np
-      dh1(j+1)=b(2*j-1)
-   12 continue
-      call fndrt(dh1,np,dh2,2*mp)
-      do 13 j=1,np
-      pd1(j)=-1.0d0/dh2(j)
-   13 continue
-c
-      dh1(1)=1.0d0
-      do 14 j=1,np
-      dh1(j+1)=b(2*j)
-   14 continue
-      call fndrt(dh1,np,dh2,2*mp)
-      do 15 j=1,np
-      pd2(j)=-1.0d0/dh2(j)
-   15 continue
-c
-      return
-      end
-
-      complex function g(sig,x,alp,nu)
-c
-c     The operator function.
-c
-      implicit none
-      real*8 ,intent(in) :: sig,x,alp,nu
-      complex*16         :: ci
-
-      ci=cmplx(0.0d0,1.0d0,8)
-      g=(1.0d0-nu*x)**2*cdexp(alp*log(1.0d0+x)+
-     >   ci*sig*(-1.0d0+sqrt(1.0d0+x)))
-      return
-      end
-
-      subroutine deriv(m,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)
-c
-c     The derivatives of the operator function at x=0.
-c
-      implicit none
-      integer*8  ,intent(in)  :: m,n
-      real*8     ,intent(in)  :: sig,alp,bin(m,m),nu
-      complex*16 ,intent(out) :: dg(m),dh1(m),dh2(m),dh3(m)
-
-      integer*8               :: i,j
-      real*8                  :: exp1,exp2,exp3
-      complex*16              :: ci
-c
-      ci=cmplx(0.0d0,1.0d0,8)
-c
-      dh1(1)=0.5d0*ci*sig
-      exp1=-0.5d0
-      dh2(1)=alp
-      exp2=-1.0d0
-      dh3(1)=-2.0d0*nu
-      exp3=-1.0d0
-      do 1 i=2,n
-      dh1(i)=dh1(i-1)*exp1
-      exp1=exp1-1.0d0
-      dh2(i)=dh2(i-1)*exp2
-      exp2=exp2-1.0d0
-      dh3(i)=-nu*dh3(i-1)*exp3
-      exp3=exp3-1.0d0
-    1 continue
-c
-      dg(1)=1.0d0
-      dg(2)=dh1(1)+dh2(1)+dh3(1)
-      do 3 i=2,n
-      dg(i+1)=dh1(i)+dh2(i)+dh3(i)
-      do 2 j=1,i-1
-      dg(i+1)=dg(i+1)+bin(i,j)*(dh1(j)+dh2(j)+dh3(j))*dg(i-j+1)
-    2 continue
-    3 continue
-c
-      return
-      end
-
-      subroutine gauss(m,n,a,b)
-c
-c     Gaussian elimination.
-c
-      implicit none
-      integer*8  ,intent(in)    :: m,n
-      complex*16 ,intent(inout) :: a(m,m),b(m)
-
-      integer*8                 :: i,j,k
-c
-c     Downward elimination.
-c
-      do 4 i=1,n
-      if(i.lt.n)call pivot(m,n,i,a,b)
-      a(i,i)=1.0d0/a(i,i)
-      b(i)=b(i)*a(i,i)
-      if(i.lt.n)then
-      do 1 j=i+1,n
-      a(i,j)=a(i,j)*a(i,i)
-    1 continue
-      do 3 k=i+1,n
-      b(k)=b(k)-a(k,i)*b(i)
-      do 2 j=i+1,n
-      a(k,j)=a(k,j)-a(k,i)*a(i,j)
-    2 continue
-    3 continue
-      end if
-    4 continue
-c
-c     Back substitution.
-c
-      do 6 i=n-1,1,-1
-      do 5 j=i+1,n
-      b(i)=b(i)-a(i,j)*b(j)
-    5 continue
-    6 continue
-c
-      return
-      end
-
-      subroutine pivot(m,n,i,a,b)
-c
-c     Rows are interchanged for stability.
-c
-      implicit none
-      integer*8  ,intent(in)    :: m,n,i
-      complex*16 ,intent(inout) :: a(m,m),b(m)
-
-      integer*8                 :: j,i0
-      real*8                    :: amp0,amp
-      complex*16                :: temp
-c
-      i0=i
-      amp0=cdabs(a(i,i))
-      do 1 j=i+1,n
-      amp=cdabs(a(j,i))
-      if(amp.gt.amp0)then
-      i0=j
-      amp0=amp
-      end if
-    1 continue
-      if(i0.eq.i)return
-c
-      temp=b(i)
-      b(i)=b(i0)
-      b(i0)=temp
-      do 2 j=i,n
-      temp=a(i,j)
-      a(i,j)=a(i0,j)
-      a(i0,j)=temp
-    2 continue
-c
-      return
-      end
-
-      subroutine fndrt(a,n,z,m)
-c
-c     The root-finding subroutine.
-c
-      implicit none
-      integer*8  ,intent(in)  ::  n,m
-      complex*16 ,intent(out) ::  a(m),z(m)
-
-      integer*8               :: i,k
-      real*8                  :: err
-      complex*16              :: root
-c
-      if(n.eq.1)then
-      z(1)=-a(1)/a(2)
-      return
-      end if
-      if(n.eq.2)go to 4
-c
-      do 3 k=n,3,-1
-c
-c     Obtain an approximate root.
-c
-      root=0.0d0
-      err=1.0d-12
-      call guerre(a,k,m,root,err,1000_8)
-c
-c     Refine the root by iterating five more times.
-c
-      err=0.0d0
-      call guerre(a,k,m,root,err,5_8)
-      z(k)=root
-c
-c     Divide out the factor (z-root).
-c
-      do 1 i=k,1,-1
-      a(i)=a(i)+root*a(i+1)
-    1 continue
-      do 2 i=1,k
-      a(i)=a(i+1)
-    2 continue
-c
-    3 continue
-c
-c     Solve the quadratic equation.
-c
-    4 z(2)=0.5*(-a(2)+sqrt(a(2)**2-4.0*a(1)*a(3)))/a(3)
-      z(1)=0.5*(-a(2)-sqrt(a(2)**2-4.0*a(1)*a(3)))/a(3)
-c
-      return
-      end
-
-      subroutine guerre(a,n,m,z,err,nter)
-c
-c     This subroutine finds a root of a polynomial of degree n > 2
-c     by Laguerres method.
-c
-      implicit none
-      integer*8  ,intent(in)  :: m,n,nter
-      real*8     ,intent(in)  :: err
-      complex*16 ,intent(in)  :: a(m)
-      complex*16 ,intent(out) :: z
-
-      integer*8               :: i,iter,jter
-      real*8                  :: amp1,amp2,rn,eps
-      complex*16              :: az(50),azz(50),dz,p,pz,pzz,f,g,h,ci
-c
-      ci=cmplx(0.0d0,1.0d0,8)
-      eps=1.0d-20
-      rn=real(n)
-c
-c     The coefficients of p_der(z) and p_der_der(z).
-c
-      do 1 i=1,n
-      az(i)=float(i)*a(i+1)
-    1 continue
-      do 2 i=1,n-1
-      azz(i)=float(i)*az(i+1)
-    2 continue
-c
-      iter=0
-    3 p=a(n)+a(n+1)*z
-      do 4 i=n-1,1,-1
-      p=a(i)+z*p
-    4 continue
-      if(abs(p).lt.eps)return
-c
-      pz=az(n-1)+az(n)*z
-      do 5 i=n-2,1,-1
-      pz=az(i)+z*pz
-    5 continue
-c
-      pzz=azz(n-2)+azz(n-1)*z
-      do 6 i=n-3,1,-1
-      pzz=azz(i)+z*pzz
-    6 continue
-c
-c     The Laguerre perturbation.
-c
-      f=pz/p
-      g=f**2-pzz/p
-      h=sqrt((rn-1.0d0)*(rn*g-f**2))
-      amp1=abs(f+h)
-      amp2=abs(f-h)
-      if(amp1.gt.amp2)then
-      dz=-rn/(f+h)
-      else
-      dz=-rn/(f-h)
-      end if
-c
-      iter=iter+1
-c
-c     Rotate by 90 degrees to avoid limit cycles.
-c
-      jter=jter+1
-      if(jter.eq.10)then
-      jter=1
-      dz=dz*ci
-      end if
-      z=z+dz
-c
-      if(iter.eq.100)then
-      write(*,*)' '
-      write(*,*)'   Laguerre method not converging.'
-      write(*,*)'   Try a different combination of DR and NP.'
-      write(*,*)' '
-      stop
-      end if
-c
-      if((abs(dz).gt.err).and.(iter.lt.nter))go to 3
-c
       return
       end

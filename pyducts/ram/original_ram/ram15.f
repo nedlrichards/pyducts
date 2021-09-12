@@ -584,6 +584,7 @@ c
       do 13 j=1,np
       pd1(j)=-1.0d0/dh2(j)
    13 continue
+
 c
       dh1(1)=1.0d0
       do 14 j=1,np
@@ -746,6 +747,7 @@ c
 c
 c     Solve the quadratic equation.
 c
+
     4 z(2)=0.5*(-a(2)+sqrt(a(2)**2-4.0*a(1)*a(3)))/a(3)
       z(1)=0.5*(-a(2)-sqrt(a(2)**2-4.0*a(1)*a(3)))/a(3)
 c

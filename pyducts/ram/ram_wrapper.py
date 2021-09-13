@@ -15,9 +15,6 @@ def run_ram():
 def read_grid(is_standard=False):
     """read tl.grid"""
     with open("tl.grid", "rb") as fid:
-        # read header
-        # fortran adds a field at every write
-        temp = struct.unpack("i", fid.read(4))
 
         if is_standard:
             num_bytes = 4
@@ -27,6 +24,10 @@ def read_grid(is_standard=False):
             num_bytes = 8
             int_type = "q"
             float_type = "d"
+
+        # read header
+        # fortran adds a field at every write
+        temp = struct.unpack("i", fid.read(4))
 
         freq = struct.unpack(float_type, fid.read(num_bytes))[0]
         z_src = struct.unpack(float_type, fid.read(num_bytes))[0]

@@ -3,8 +3,8 @@ import shutil
 from subprocess import check_output
 from ram_wrapper import read_line, read_grid
 
-ram_exe = './bin/ram'
-ram_typed_exe = './bin/ram_v1'
+ram_exe = './bin/ram_v1'
+ram_typed_exe = './bin/ram_v2'
 
 # typing changes tl by a bit, put absolute threshold on accuracy
 eps = 0.1
@@ -14,8 +14,9 @@ shutil.copy('./tests/readme.in', 'ram.in')
 rout = check_output(ram_exe)
 
 # load transmission loss from tl.line
-r, tl = read_line(is_standard=True)
-rg, zg, tlg = read_grid(is_standard=True)
+r, tl = read_line(is_standard=False)
+rg, zg, tlg = read_grid(is_standard=False)
+
 
 # compare with typed ram output
 rout = check_output(ram_typed_exe)
@@ -35,8 +36,8 @@ shutil.copy('./tests/spice.in', 'ram.in')
 rout = check_output(ram_exe)
 
 # load transmission loss from tl.line
-r, tl = read_line(is_standard=True)
-rg, zg, tlg = read_grid(is_standard=True)
+r, tl = read_line(is_standard=False)
+rg, zg, tlg = read_grid(is_standard=False)
 
 # compare with typed ram output
 rout = check_output(ram_typed_exe)

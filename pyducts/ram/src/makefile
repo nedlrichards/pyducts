@@ -15,16 +15,22 @@ PROG_RAM := ram
 RAM_V1 := ram_v1.f
 PROG_RAM_V1 := ram_v1
 
+RAM_V2 := ram_v2.f90
+PROG_RAM_V2 := ram_v2
+
 OBJS := $(addsuffix .o, $(SRCS))
 
 .PHONY: all clean
 
-all: $(PROG_RAM) $(PROG_RAM_V1)
+all: $(PROG_RAM) $(PROG_RAM_V1) $(PROG_RAM_V2)
 
 $(PROG_RAM): $(RAM)
 	$(LD) -o $(prefix)$@ $^
 
 $(PROG_RAM_V1): $(RAM_V1) $(OBJS)
+	$(LD) -o $(prefix)$@ $^
+
+$(PROG_RAM_V2): $(RAM_V2) $(OBJS)
 	$(LD) -o $(prefix)$@ $^
 
 $(OBJS): %.o: %
@@ -36,4 +42,4 @@ pade_coeffs.f90.o: cmplx_roots_sg.f90.o constants.f90.o
 $(OBJS): $(MAKEFILE_LIST)
 
 clean:
-	$(RM) $(filter %.o, $(OBJS)) $(wildcard *.mod) $(prefix)$(PROG_RAM)
+	$(RM) $(filter %.o, $(OBJS)) $(wildcard *.mod) $(prefix)$(PROG_RAM) $(prefix)$(PROG_RAM_V1) $(prefix)$(PROG_RAM_V2)

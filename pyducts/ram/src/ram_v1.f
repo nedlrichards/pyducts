@@ -101,18 +101,27 @@ c
 c     Initialize the parameters, acoustic field, and matrices.
 c
       use pade_coeffs ,only : pe_pade
+      use constants     ,only : pi
       implicit none
 
-      integer*8 mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,i,j
-      real*8 dir,dr,dz,pi,eps,omega,rmax,c0,k0,r,rp,rs,z,zs,
-     >   zmax,ri,freq,zmplt,zr,rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),
-     >   attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
-      complex*16 ci,u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
-c
-      ci=cmplx(0.0,1.0,8)
+      integer*8  ,intent(in)  :: mr,mz,mp
+      integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
+      real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,
+     >                           rp,rs,rb(mr),zb(mr),cw(mz),
+     >                           cb(mz),rhob(mz),attn(mz),alpw(mz),
+     >                           alpb(mz),ksqw(mz),
+     >                           f1(mz),f2(mz),f3(mz)
+
+      complex*16 ,intent(out) :: u(mz),v(mz),ksq(mz),ksqb(mz),
+     >                           r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                           s1(mz,mp),s2(mz,mp),s3(mz,mp),
+     >                           pd1(mp),pd2(mp)
+
+      integer*8               :: i,j
+      real*8                  :: eps,z,zs,zmax,ri,freq,zmplt,zr
+
+
       eps=1.0e-20
-      pi=3.1415926535897932384626433832795d0
 
       read(1,*)
       read(1,*)freq,zs,zr
@@ -201,13 +210,19 @@ c
 c
 c     Set up the profiles.
 c
+      use constants ,only : i_
       implicit none
-      integer*8 mz,nz,i
-      real*8 dz,eta,omega,rmax,c0,k0,rp,cw(mz),cb(mz),rhob(mz),
-     >   attn(mz),alpw(mz),alpb(mz),ksqw(mz)
-      complex*16 ci,ksqb(mz)
 
-      ci=cmplx(0.0,1.0,8)
+      integer*8  ,intent(in)  :: mz,nz
+      real*8     ,intent(in)  :: dz,omega,rmax,c0,k0
+      real*8     ,intent(out) :: rp,cw(mz),cb(mz),rhob(mz),
+     >                           attn(mz),alpw(mz),alpb(mz),
+     >                           ksqw(mz)
+      complex*16 ,intent(out) :: ksqb(mz)
+
+      integer*8               :: i
+      real*8                  :: eta
+
       eta=0.01832338997198569352181968569348d0
 c
       call zread(mz,nz,dz,cw)
@@ -219,7 +234,7 @@ c
 c
     1 do 2 i=1,nz+2
       ksqw(i)=(omega/cw(i))**2-k0**2
-      ksqb(i)=((omega/cb(i))*(1.0+ci*eta*attn(i)))**2-k0**2
+      ksqb(i)=((omega/cb(i))*(1.0+i_*eta*attn(i)))**2-k0**2
       alpw(i)=sqrt(cw(i)/c0)
       alpb(i)=sqrt(rhob(i)*cb(i)/c0)
     2 continue
@@ -232,9 +247,13 @@ c
 c     Profile reader and interpolator.
 c
       implicit none
-      integer*8 mz,nz,i,j,k,iold
-      real*8 dz,zi,profi,prof(mz)
-c
+      integer*8 ,intent(in)  :: mz,nz
+      real*8    ,intent(in)  :: dz
+      real*8    ,intent(out) :: prof(mz)
+
+      integer*8              :: i,j,k,iold
+      real*8                 :: zi,profi
+
       do 1 i=1,nz+2
       prof(i)=-1.0
     1 continue
@@ -271,11 +290,20 @@ c
 c     The tridiagonal matrices.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz,jz,i,j,i1,i2
-      real*8 dz,k0,rhob(mz),f1(mz),f2(mz),f3(mz),alpw(mz),alpb(mz),
-     >   ksqw(mz),a1,a2,a3,c1,c2,c3,cfact,dfact
-      complex*16 d1,d2,d3,rfact,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8     ,intent(in)    :: mz,nz,mp,np,iz,jz
+      real*8        ,intent(in)    :: dz,k0,rhob(mz),alpw(mz),
+     >                                alpb(mz),ksqw(mz)
+      real*8        ,intent(out)   :: f1(mz),f2(mz),f3(mz)
+      complex*16    ,intent(in)    :: ksqb(mz),pd1(mp),pd2(mp)
+      complex*16    ,intent(out)   :: ksq(mz), r1(mz,mp),r2(mz,mp),
+     >                                r3(mz,mp),s1(mz,mp),
+     >                                s2(mz,mp),s3(mz,mp)
+
+      integer*8                    :: i,j,i1,i2
+      real*8                       :: a1,a2,a3,c1,c2,c3,
+     >                                cfact,dfact,rfact
+      complex*16                   :: d1,d2,d3
+
 c
       a1=k0**2/6.0
       a2=2.0*k0**2/3.0
@@ -382,10 +410,15 @@ c
 c     The tridiagonal solver.
 c
       implicit none
-      integer*8 mz,nz,mp,np,iz,i,j
-      real*8 eps
-      complex*16 u(mz),v(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
-     >   s1(mz,mp),s2(mz,mp),s3(mz,mp)
+
+      integer*8   ,intent(in)    :: mz,nz,mp,np,iz
+      complex*16  ,intent(in)    :: r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                              s1(mz,mp),s2(mz,mp),s3(mz,mp)
+      complex*16  ,intent(inout) :: u(mz),v(mz)
+
+      real*8                     :: eps
+      integer*8                  :: i,j
+
       eps=1.0e-30
 c
       do 6 j=1,np
@@ -430,17 +463,23 @@ c
       use pade_coeffs ,only : pe_pade
       implicit none
 
-      integer*8 mr,mz,nz,mp,np,iz,ib,jz,ns
-      real*8 dr,dz,omega,rmax,c0,k0,r,rp,rs,rb(mr),z,zb(mr),
-     >   attn(mz),cb(mz),rhob(mz),cw(mz),ksqw(mz),f1(mz),f2(mz),f3(mz),
-     >   alpw(mz),alpb(mz)
-      complex*16 ci,ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),r3(mz,mp),
-     >   s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8 ,intent(in)    :: mr,mz,nz,mp,np
+      integer*8 ,intent(out)   :: iz,ib
+      real*8                   :: dr,dz,omega,rmax,c0,k0,r,rb(mr),
+     >                            zb(mr),f1(mz),f2(mz),f3(mz)
+      real*8                   :: rp,rs
+      real*8                   :: cw(mz),cb(mz),rhob(mz),attn(mz),
+     >                            alpw(mz),alpb(mz),ksqw(mz)
+      complex*16               :: ksq(mz),ksqb(mz),
+     >                            r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                            s1(mz,mp),s2(mz,mp),s3(mz,mp)
+      complex*16               :: pd1(mp),pd2(mp)
+
+      integer*8                :: jz,ns
+      real*8                   :: z
 c
 c     Varying bathymetry.
 c
-
-      ci=cmplx(0.0d0,1.0d0,8)
       if(r.ge.rb(ib+1))ib=ib+1
       jz=iz
       z=zb(ib)+(r+0.5*dr-rb(ib))*(zb(ib+1)-zb(ib))/(rb(ib+1)-rb(ib))
@@ -477,17 +516,23 @@ c
 c     The self-starter.
 c
       use pade_coeffs ,only : pe_pade
+      use constants ,only : i_, pi
       implicit none
+      integer*8 ,intent(in)     :: mz,nz,mp,np,ns,iz
+      real*8    ,intent(in)     :: zs,dr,dz,k0,rhob(mz),alpw(mz),
+     >                             alpb(mz),ksqw(mz)
+      real*8    ,intent(out)    :: f1(mz),f2(mz),f3(mz)
+      complex*16 ,intent(in)    :: ksqb(mz)
+      complex*16 ,intent(inout) :: ksq(mz),v(mz),u(mz)
+      complex*16 ,intent(out)   :: pd1(mp),pd2(mp),
+     >                             r1(mz,mp),r2(mz,mp),r3(mz,mp),
+     >                             s1(mz,mp),s2(mz,mp),s3(mz,mp)
 
-      integer*8 mz,nz,mp,np,ns,iz,is
-      real*8 zs,dr,dz,pi,k0,rhob(mz),alpw(mz),alpb(mz),dis,si,
-     >   f1(mz),f2(mz),f3(mz),ksqw(mz)
-      complex*16 u(mz),v(mz),ksq(mz),ksqb(mz),r1(mz,mp),r2(mz,mp),
-     >   r3(mz,mp),s1(mz,mp),s2(mz,mp),s3(mz,mp),pd1(mp),pd2(mp)
+      integer*8                 :: is
+      real*8                    :: dis,si
 c
 c     Conditions for the delta function.
 c
-      pi=3.1415926535897932384626433832795d0
       si=1.0+zs/dz
       is=int(si,8)
       dis=si-float(is)
@@ -519,9 +564,13 @@ c
 c     Output transmission loss line
 c
       implicit none
-      integer*8 mz,ir
-      real*8 dir,eps,r,f3(mz)
-      complex*16 ur,u(mz),pout
+      integer*8  ,intent(in) :: mz,ir
+      real*8     ,intent(in) :: dir,r,f3(mz)
+      complex*16 ,intent(in) :: u(mz)
+
+      real*8                 :: eps
+      complex*16             :: ur,pout
+
       eps=1e-20
 c
       ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
@@ -536,9 +585,14 @@ c
 c     Output transmission loss.
 c
       implicit none
-      integer*8 mz,ndz,nzplt,lz,i,j
-      real*8 eps,r,f3(mz)
-      complex*16 ur,u(mz),poutg(mz)
+      integer*8  ,intent(in) :: mz,ndz,nzplt,lz
+      real*8     ,intent(in) :: r,f3(mz)
+      complex*16 ,intent(in) :: u(mz)
+
+      integer*8              :: i,j
+      real*8                 :: eps
+      complex*16             :: ur,poutg(mz)
+
       eps=1e-20
 
       j=0

@@ -15,7 +15,6 @@ program ram
 
     open(unit=1,status='old',file='ram.in')
     open(unit=2,status='unknown',file='tl.line')
-    ! open(unit=3,status='unknown',file='tl.grid',access='stream')
     open(unit=3,status='unknown',file='tl.grid',form='unformatted')
 
     call setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,    &
@@ -24,7 +23,7 @@ program ram
 
     ! March the acoustic field out in range.
     mdr=0
-    do while (r <= rmax)
+    do while (r < rmax)
         call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,r, rp,rs,rb, &
                    zb,cw,cb,rhob,attn,alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,     &
                    r1,r2,r3,s1,s2,s3,pd1,pd2)
@@ -129,22 +128,21 @@ subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,    &
         lz=lz+1
     end do
     write(3) freq,zs,zr,rmax,dr,ndr,zmax,dz,ndz,zmplt,c0,np,ns,rs,lz
-end subroutine
 
     !  The initial profiles and starting field.
 
-    !call profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,     &
-               !alpw,alpb,ksqw,ksqb)
-    !call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,ksq, &
-               !ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
-    !call outln(mz,ir,dir,r,f3,u)
-    !call outgr(mz,ndz,nzplt,lz,r,f3,u)
+    call profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,     &
+               alpw,alpb,ksqw,ksqb)
+    call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,ksq, &
+               ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
+    call outln(mz,ir,dir,r,f3,u)
+    call outgr(mz,ndz,nzplt,lz,r,f3,u)
 
     !! The propagation matrices.
-    !call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
-    !call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,           &
-               !ksq,ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-!end subroutine
+    call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
+    call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob,alpw,alpb,           &
+               ksq,ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+end subroutine
 
 subroutine profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob, &
                  attn,alpw,alpb,ksqw,ksqb)

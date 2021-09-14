@@ -242,8 +242,8 @@ subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw, &
 
     integer*8                    :: i,j,i1,i2
     real*8                       :: a1,a2,a3,c1,c2,c3,            &
-                                    cfact,dfact,rfact
-    complex*16                   :: d1,d2,d3
+                                    cfact,dfact
+    complex*16                   :: d1,d2,d3,rfact
 
     a1=k0**2/6.0
     a2=2.0*k0**2/3.0

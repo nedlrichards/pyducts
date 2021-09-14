@@ -301,8 +301,8 @@ c
 
       integer*8                    :: i,j,i1,i2
       real*8                       :: a1,a2,a3,c1,c2,c3,
-     >                                cfact,dfact,rfact
-      complex*16                   :: d1,d2,d3
+     >                                cfact,dfact
+      complex*16                   :: d1,d2,d3,rfact
 
 c
       a1=k0**2/6.0

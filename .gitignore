@@ -23,4 +23,4 @@ __pycache__
 *.prt
 *.flp
 *.nc
-ram.in
+*ram.in

@@ -128,18 +128,14 @@ contains
         allocate(alpb(nz+2, nprof-1))
         allocate(rhob(nz+2, nprof-1))
 
-        do j=1,nprof-1
-            rp(j) = rp_tmp(j)
-            ! computed quantities from interpolated profiles
-            do i=1,nz+2
-                ksqw(i, j)=(omega/cw(i, j))**2-k0**2
-                ksqb(i, j)=((omega/cb(i, j))*(1.0+i_*eta*attn(i, j)))**2-k0**2
-                alpw(i, j)=sqrt(cw(i, j)/c0)
-                alpb(i, j)=sqrt(rho_tmp(i, j)*cb(i, j)/c0)
-                rhob(i, j)=rho_tmp(i, j)
-            end do
-        end do
-        rp(nprof) = rp_tmp(nprof)
+        rp = rp_tmp(1:nprof)
+        ! computed quantities from interpolated profiles
+        ksqw=(omega / cw(1:nz+2, 1:nprof-1)) ** 2 - k0 ** 2
+        ksqb=((omega / cb(1:nz+2, 1:nprof-1))                                  &
+            * (1.0 + i_ * eta * attn(1:nz+2, 1:nprof-1))) ** 2 - k0 ** 2
+        alpw=sqrt(cw(1:nz+2, 1:nprof-1) / c0)
+        alpb=sqrt(rho_tmp(1:nz+2, 1:nprof-1) * cb(1:nz+2, 1:nprof-1) / c0)
+        rhob=rho_tmp(1:nz+2, 1:nprof-1)
 
     end subroutine
 

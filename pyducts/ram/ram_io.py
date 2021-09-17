@@ -1,143 +1,132 @@
 import numpy as np
-from math import pi
+from math import pi, e
+
+eta = 1 / (40 * pi * np.log10(e)) # attenuation unit conversion
 
 class RamIn:
     """Read in from ram.in"""
 
-    def __init__(self):
-        """Read inputs from ram.on"""
-        with open("ram.in", "r") as fid:
-            fid.readline()
+    def __init__(self, file_in="ram.in"):
+        """Read inputs from ram.in"""
 
-            freq, z_src, z_rcr = fid.readline().split()
-            rmax, dr, range_decimation = fid.readline().split()
-            zmax, dz, z_decimation, zmax_plot = fid.readline().split()
-            ref_c, num_pade, num_stability, range_stability = fid.readline().split()
-
-            def read_bathy(fid):
-                """Read bathymetric data line by line"""
-                rb, zb = fid.readline().split()
-                last_zb = zb
-                while rb > 0.:
+        def _bathy(rmax, fid):
+            """Read bathymetric data line by line"""
+            rb = 0.
+            while rb >= 0.:
+                oput = fid.readline()
+                rb, zb = np.array(oput.split()[:2], dtype=np.float64)
+                if rb >= 0.:
                     last_zb = zb
                     yield rb, zb
-                yield 2 * rmax, last_zb
 
-            bathy = np.array([read_bathy(fid)])
-            # TODO: check for no bathy case
+            # extend constant bathymetry past end of computation range
+            yield 2 * rmax, last_zb
 
-            ib = 1
-            r_current = dr
-            omega = 2.0 * pi * freq
-            receiver_bins = 1.0 + z_rcr / dz
-            receiver_i = int(ri)
-            receiver_mod = ri - ir
-            k0 = omega / ref_c
-            num_z = int(zmax / dz - 0.5)
-            num_z_plot = int(zmax_plot / dz - 0.5)
-            num_z_save = int(num_z_plot / z_decimation)
+        # read file
+        with open(file_in, "r") as fid:
+            title = fid.readline()
+
+            # read tun specifications from file
+            specs = []
+            specs += fid.readline().split()[:3]
+            specs += fid.readline().split()[:3]
+            specs += fid.readline().split()[:4]
+            specs += fid.readline().split()[:4]
+
+            self.bathy = np.array(list(_bathy(self.rmax, fid)))
+
+            all_profiles = list(self.read_profiles(fid))
+
+            cw         = np.array([p[0] for p in all_profiles])
+            cb         = np.array([p[1] for p in all_profiles])
+            self.rho_b = np.array([p[2] for p in all_profiles])
+            attn       = np.array([p[3] for p in all_profiles])
+
+            # 0 range is added to ranges of profiles
+            rp         = np.array([0.] + [p[4] for p in all_profiles])
+
+            # assign specifications to variables
+            specs = specs[::-1]  # flip to make pop more intuative
+            self.freq = float(specs.pop())
+            self.z_src = float(specs.pop())
+            self.z_rcr = float(specs.pop())
+            self.rmax = float(specs.pop())
+            self.dr = float(specs.pop())
+            self.range_decimation = int(specs.pop())
+            self.zmax = float(specs.pop())
+            self.dz = float(specs.pop())
+            self.z_decimation = int(specs.pop())
+            self.zmax_plot = float(specs.pop())
+            self.c0 = float(specs.pop())
+            self.num_pade = int(specs.pop())
+            self.num_stability = int(specs.pop())
+            self.range_stability = float(specs.pop())
+
+            self.omega = 2.0 * pi * self.freq
+            self.k0 = self.omega / self.c0
+
+            # reciver specifications
+            receiver_zbins = 1.0 + self.z_rcr / self.dz
+            self.receiver_zi = int(receiver_zbins)
+            self.receiver_zmod = receiver_zbins - self.receiver_zi
+
+            num_z = int(self.zmax / self.dz - 0.5)
+            self.zaxis = (np.arange(num_z) + 1) * self.dz
+            self.z_save = self.zaxis[self.zaxis < self.zmax_plot]
+            self.z_save = self.z_save[::self.z_decimation]
 
             # find closest index of the bottom
-            z_bottom = zb(1)
-            bottom_index = int(1.0 + z_bottom / dz)
+            z_bottom = self.bathy[0, 1]
+            bottom_index = int(1.0 + z_bottom / self.dz)
             bottom_index = max(2, bottom_index)
-            bottom_index = min(num_z, bottom_index)
+            self.bottom_index = min(num_z, bottom_index)
 
-            if range_stability < dr:
-                range_stability = 2.0 * rmax
+            if self.range_stability < self.dr:
+                self.range_stability = 2.0 * self.rmax
 
-            #r3 = np.zeros((num_z + 2, num_pade), dtype=np.complex128)
-            #r1 = np.zeros((num_z + 2, num_pade), dtype=np.complex128)
-            #u = np.zeros(num_z + 2, dtype=np.complex128)
-            #v = np.zeros(num_z + 2, dtype=np.complex128)
+            # computed quantities from interpolated profiles
+            self.ksqw = (self.omega / cw) ** 2 - self.k0 ** 2
+            self.ksqb = ((self.omega / cb) * (1.0 + 1j * eta * attn)) ** 2 \
+                      - self.k0 ** 2
+            self.alpw = np.sqrt(cw / self.c0)
+            self.alpb = np.sqrt(self.rho_b * cb / self.c0)
 
+    def read_profiles(self, fid):
+        """Read profile blocks of ram.in in sequence"""
 
-"""
-    subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz, &
-                    omega,rmax,c0,k0,r,rp,rs,rb,zb,cw,cb,rhob,attn,alpw,   &
-                    alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
-        ! Initialize the parameters, acoustic field, and matrices.
-        integer*8  ,intent(in)  :: mr,mz,mp
-        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
-        real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rp,rs
+        def _profile(zmax, fid):
+            """Read single property profile in line by line"""
+            zprof = 0.
 
-        rb(mr),zb(mr),cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz),f1(mz),f2(mz),f3(mz)
+            while zprof >= 0.:
+                oput = fid.readline().split()[:2]
+                zprof, value = np.array(oput, dtype=np.float64)
+                if zprof >= 0.:
+                    last_value = value
+                    yield zprof, value
 
-        complex*16 ,intent(out) :: u(mz),v(mz),ksq(mz),ksqb(mz),
-                                   r1(mz,mp),r2(mz,mp),r3(mz,mp),
-                                   s1(mz,mp),s2(mz,mp),s3(mz,mp),
-                                   pd1(mp),pd2(mp)
+            yield zmax, last_value
 
-      integer*8               :: i,j
-      real*8                  :: z,zs,zmax,ri,freq,zmplt,zr
+        # read profiles at each defined range
+        rp = 0.
+        while rp < self.rmax:
+            cw_points = np.array(list(_profile(self.zmax, fid)))
+            cb_points = np.array(list(_profile(self.zmax, fid)))
+            rho_b_points = np.array(list(_profile(self.zmax, fid)))
+            attn_points = np.array(list(_profile(self.zmax, fid)))
 
-    end subroutine
+            # end of file will occur here
+            next_l = fid.readline()
+            if next_l:
+                rp = float(next_l.split()[0])
+            else:
+                # break condition
+                rp = 2 * self.rmax
 
-    subroutine profl(mz,nz,dz,omega,rmax,c0,k0,rp,cw,cb,rhob,attn,alpw,alpb,ksqw,ksqb)
-        ! Set up the profiles.
-        integer*8  ,intent(in)  :: mz,nz
-        real*8     ,intent(in)  :: dz,omega,rmax,c0,k0
-        real*8     ,intent(out) :: rp,cw(mz),cb(mz),rhob(mz),attn(mz),alpw(mz),alpb(mz),ksqw(mz)
-        complex*16 ,intent(out) :: ksqb(mz)
+            # interpolate profiles to ram grid
+            cw = np.interp(self.zaxis, cw_points[:, 0], cw_points[:, 1])
+            cb = np.interp(self.zaxis, cb_points[:, 0], cb_points[:, 1])
+            rho_b = np.interp(self.zaxis, rho_b_points[:, 0], rho_b_points[:, 1])
+            attn = np.interp(self.zaxis, attn_points[:, 0], attn_points[:, 1])
 
-        integer*8               :: i
-        real*8                  :: eta
-
-        eta=0.01832338997198569352181968569348d0
-
-        call zread(mz,nz,dz,cw)
-        call zread(mz,nz,dz,cb)
-        call zread(mz,nz,dz,rhob)
-        call zread(mz,nz,dz,attn)
-        rp=2.0*rmax
-        read(1,*,end=1)rp
-
-        do i=1,nz+2
-            ksqw(i)=(omega/cw(i))**2-k0**2
-            ksqb(i)=((omega/cb(i))*(1.0+i_*eta*attn(i)))**2-k0**2
-            alpw(i)=sqrt(cw(i)/c0)
-            alpb(i)=sqrt(rhob(i)*cb(i)/c0)
-        continue
-    end subroutine
-
-    subroutine zread(mz,nz,dz,prof)
-        ! Profile reader and interpolator.
-
-        integer*8 ,intent(in)  :: mz,nz
-        real*8    ,intent(in)  :: dz
-        real*8    ,intent(out) :: prof(mz)
-
-        integer*8              :: i,j,k,iold
-        real*8                 :: zi,profi
-
-        do i=1,nz+2
-            prof(i)=-1.0
-        continue
-
-        read(1,*) zi,profi
-        prof(1) = profi
-        i = int(1.5 + zi / dz, 8)
-        prof(i) = profi
-        iold=i
-        read(1,*) zi,profi
-
-        if(zi.lt.0.0)go to 3
-        i=int(1.5+zi/dz, 8)
-        if(i.eq.iold)i=i+1
-        prof(i)=profi
-        iold=i
-        go to 2
-    3 prof(nz+2)=prof(i)
-      i=1
-      j=1
-    4 i=i+1
-      if(prof(i).lt.0.0)go to 4
-      if(i-j.eq.1)go to 6
-      do 5 k=j+1,i-1
-      prof(k)=prof(j)+float(k-j)*(prof(i)-prof(j))/float(i-j)
-    5 continue
-        j=i
-        if(j.lt.nz+2)go to 4
-
-    end subroutine
-"""
+            yield cw, cb, rho_b, attn, rp

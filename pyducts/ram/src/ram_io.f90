@@ -1,35 +1,32 @@
-module ram_v3
-    use pade_coeffs   ,only : pe_pade
-    use constants     ,only : pi, i_, e
+module ram_io
+    use constants     ,only : pi, i_, e_
     implicit none
 
 contains
     subroutine inram(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,    &
-                     omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,ksqw,   &
-                     ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,zs,zr,zmax,zmplt)
+                     omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,       &
+                     ksqb,zs,zr,zmax,zmplt)
 
         ! Initialize the parameters, acoustic field, and matrices.
         integer*8  ,intent(in)  :: mr,mz,mp
         integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
         real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
 
-        real*8   ,allocatable    ,dimension(:)    :: rp_tmp
-        real*8   ,allocatable    ,dimension(:,:)  :: cw,cb,attn,rho_tmp
-
         real*8     ,intent(out) ,allocatable ,dimension(:)  :: rp
         real*8     ,intent(out) ,allocatable ,dimension(:,:):: rhob,alpw,alpb,ksqw
         complex*16 ,intent(out) ,allocatable ,dimension(:,:):: ksqb
 
-        complex*16 ,intent(out) ,dimension(mz)    :: u,v,ksq
-        complex*16 ,intent(out) ,dimension(mz,mp) :: r1,r2,r3,s1,s2,s3
-
         real*8     ,intent(out) ,dimension(mr)    :: rb,zb
-        real*8     ,intent(out) ,dimension(mz)    :: f1,f2,f3
+
+        real*8     ,allocatable ,dimension(:)    :: rp_tmp
+        real*8     ,allocatable ,dimension(:,:)  :: cw,cb,attn,rho_tmp
 
         integer*8               :: i,j,max_nprof,nprof,iostat
         real*8                  :: z,ri,freq,eta,r_read
 
-        eta=1 / (40. * pi * log10(e))
+        open(unit=1,status='old',file='ram.in')
+
+        eta = 1 / (40. * pi * log10(e_))
 
         read(1,*)
         read(1,*)freq,zs,zr
@@ -79,10 +76,10 @@ contains
         end do
 
         allocate(rp_tmp(max_nprof))
-        allocate(cw(mz, max_nprof))
-        allocate(cb(mz, max_nprof))
-        allocate(attn(mz, max_nprof))
-        allocate(rho_tmp(mz, max_nprof))
+        allocate(cw(nz+2, max_nprof))
+        allocate(cb(nz+2, max_nprof))
+        allocate(attn(nz+2, max_nprof))
+        allocate(rho_tmp(nz+2, max_nprof))
 
         iostat = 0
         ! set range of 0th profile before loop
@@ -160,7 +157,7 @@ contains
             if (prof(i) < 0.0) cycle
 
             if(i-j > 1) then
-            ! interpolat between defined values
+            ! interpolate between defined values
                 do k = j + 1, i - 1
                     prof(k)=prof(j)+float(k-j)*(prof(i)-prof(j))/float(i-j)
                 end do

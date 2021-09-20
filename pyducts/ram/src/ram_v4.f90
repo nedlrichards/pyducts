@@ -1,66 +1,150 @@
-module ram_v3
+module ram_v4
     use pade_coeffs   ,only : pe_pade
     use constants     ,only : pi, i_
+    use ram_io        ,only : inram
     implicit none
 
 contains
-    subroutine updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,              &
-                     r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,                         &
-                     ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2,prof_i)
-        ! Matrix updates.
-        integer*8 ,intent(in)    :: mr,mz,nz,mp,np
-        integer*8 ,intent(inout) :: iz,ib,prof_i
-        real*8                   :: dr,dz,omega,rmax,c0,k0,r,rb(mr),           &
-                                    zb(mr),f1(mz),f2(mz),f3(mz)
-        real*8                   :: rp(:),rs
-        real*8                   :: rhob(:,:),alpw(:,:),alpb(:,:),ksqw(:,:)
-        complex*16               :: ksq(:),ksqb(:,:),                          &
-                                    r1(mz,mp),r2(mz,mp),r3(mz,mp),             &
-                                    s1(mz,mp),s2(mz,mp),s3(mz,mp)
-        complex*16               :: pd1(mp),pd2(mp)
+    subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,                 &
+                     ir,dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,         &
+                     alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,            &
+                     s1,s2,s3,pd1,pd2,zs,zr,zmax,zmplt)
 
-        integer*8                :: jz,ns
-        real*8                   :: z
-        logical                  :: isup
+        ! Initialize the parameters, acoustic field, and matrices.
+        integer*8  ,intent(in)  :: mr,mz,mp
+        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
+        real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
 
-        ! Varying bathymetry.
-        isup = .false.
+        real*8   ,allocatable    ,dimension(:)    :: rp_tmp
+        real*8   ,allocatable    ,dimension(:,:)  :: cw,cb,attn,rho_tmp
 
-        if(r >= rb(ib+1)) ib=ib+1
-        jz=iz
-        z=zb(ib)+(r+0.5*dr-rb(ib))*(zb(ib+1)-zb(ib))/(rb(ib+1)-rb(ib))
-        iz=int(1.0+z/dz,8)
-        iz=max(2,iz)
-        iz=min(nz,iz)
+        real*8     ,intent(out) ,allocatable ,dimension(:)  :: rp
+        real*8     ,intent(out) ,allocatable ,dimension(:,:):: rhob,alpw,alpb,ksqw
+        complex*16 ,intent(out) ,allocatable ,dimension(:,:):: ksqb
 
-        if(iz /= jz) isup = .true.
+        complex*16 ,intent(out) ,dimension(mz)    :: u,v,ksq
+        complex*16 ,intent(out) ,dimension(mz,mp) :: r1,r2,r3,s1,s2,s3
+        complex*16 ,intent(out) ,dimension(mp)    :: pd1,pd2
 
-        if(r >= rp(prof_i+1)) then
-            prof_i=prof_i+1
-            isup = .true.
-        end if
+        real*8     ,intent(out) ,dimension(mr)    :: rb,zb
+        real*8     ,intent(out) ,dimension(mz)    :: f1,f2,f3
 
-        ! Turn off the stability constraints.
-        if(r >= rs)then
-            ns=0
-            rs=2.0*rmax
-            call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
-            isup = .true.
-        end if
+        integer*8               :: i,j,max_nprof,nprof,iostat
+        real*8                  :: z,ri,freq,eta,r_read
 
-        ! Varying profiles.
-        if(isup)then
-            call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob(:,prof_i),alpw(:,prof_i),  &
-                       alpb(:,prof_i),ksq,ksqw(:,prof_i),ksqb(:,prof_i),       &
-                       f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
-        end if
+        call inram(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,      &
+                     omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,       &
+                     ksqb,zs,zr,zmax,zmplt)
+
+        !eta=0.01832338997198569352181968569348d0
+
+        !read(1,*)
+        !read(1,*)freq,zs,zr
+        !read(1,*)rmax,dr,ndr
+        !read(1,*)zmax,dz,ndz,zmplt
+        !read(1,*)c0,np,ns,rs
+
+        !i=1
+        !read(1,*)rb(i),zb(i)
+        !do while (rb(i) >= 0.0)
+            !i=i+1
+            !read(1,*)rb(i),zb(i)
+        !end do
+        !rb(i)=2.0*rmax
+        !zb(i)=zb(i-1)
+
+        !ib=1
+        !r=dr
+        !max_nprof=int(rmax / dr, 8)
+        !omega=2.0*pi*freq
+        !ri=1.0+zr/dz
+        !ir=int(ri,8)
+        !dir=ri-float(ir)
+        !k0=omega/c0
+        !nz=int(zmax/dz-0.5,8)
+        !nzplt=int(zmplt/dz-0.5,8)
+        !z=zb(1)
+        !iz=int(1.0+z/dz,8)
+        !iz=max(2,iz)
+        !iz=min(nz,iz)
+        !if(rs.lt.dr)rs=2.0*rmax
+
+        !if(nz+2.gt.mz)then
+        !write(*,*)'   Need to increase parameter mz to ',nz+2
+        !stop
+        !end if
+        !if(np.gt.mp)then
+        !write(*,*)'   Need to increase parameter mp to ',np
+        !stop
+        !end if
+        !if(i.gt.mr)then
+        !write(*,*)'   Need to increase parameter mr to ',i
+        !stop
+        !end if
+
+        do j=1,mp
+            r3(1,j)=0.0
+            r1(nz+2,j)=0.0
+        end do
+
+        do i=1,nz+2
+            u(i)=0.0
+            v(i)=0.0
+        end do
+
+        !lz=0
+        !do i=ndz,nzplt,ndz
+            !lz=lz+1
+        !end do
+
+        !allocate(rp_tmp(max_nprof))
+        !allocate(cw(mz, max_nprof))
+        !allocate(cb(mz, max_nprof))
+        !allocate(attn(mz, max_nprof))
+        !allocate(rho_tmp(mz, max_nprof))
+
+        !iostat = 0
+        ! set range of 0th profile before loop
+        !r_read = 0
+        !nprof = 1
+
+        !do while (iostat == 0)
+            !rp_tmp(nprof) = r_read
+            ! interpolated profiles read from file
+
+            !call zread(nz,dz,cw(:, nprof))
+            !call zread(nz,dz,cb(:, nprof))
+            !call zread(nz,dz,rho_tmp(:, nprof))
+            !call zread(nz,dz,attn(:, nprof))
+
+            !read(1,*,iostat=iostat)r_read
+            !nprof = nprof + 1
+        !end do
+
+        !rp_tmp(nprof)=2.0*rmax
+
+        !allocate(rp(nprof))
+        !allocate(ksqw(nz+2, nprof-1))
+        !allocate(ksqb(nz+2, nprof-1))
+        !allocate(alpw(nz+2, nprof-1))
+        !allocate(alpb(nz+2, nprof-1))
+        !allocate(rhob(nz+2, nprof-1))
+
+        !rp = rp_tmp(1:nprof)
+        ! computed quantities from interpolated profiles
+        !ksqw=(omega / cw(1:nz+2, 1:nprof-1)) ** 2 - k0 ** 2
+        !ksqb=((omega / cb(1:nz+2, 1:nprof-1))                                  &
+            !* (1.0 + i_ * eta * attn(1:nz+2, 1:nprof-1))) ** 2 - k0 ** 2
+        !alpw=sqrt(cw(1:nz+2, 1:nprof-1) / c0)
+        !alpb=sqrt(rho_tmp(1:nz+2, 1:nprof-1) * cb(1:nz+2, 1:nprof-1) / c0)
+        !rhob=rho_tmp(1:nz+2, 1:nprof-1)
 
     end subroutine
-
 
     subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,          &
                     ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
         ! The tridiagonal matrices.
+
         integer*8     ,intent(in)    :: mz,nz,mp,np,iz,jz
         real*8        ,intent(in)    :: dz,k0,rhob(:),alpw(:),alpb(:),ksqw(:)
         real*8        ,intent(out)   :: f1(mz),f2(mz),f3(mz)
@@ -215,6 +299,59 @@ contains
         end do
     end subroutine
 
+    subroutine updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,              &
+                     r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,                         &
+                     ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2,prof_i)
+        ! Matrix updates.
+        integer*8 ,intent(in)    :: mr,mz,nz,mp,np
+        integer*8 ,intent(inout) :: iz,ib,prof_i
+        real*8                   :: dr,dz,omega,rmax,c0,k0,r,rb(mr),           &
+                                    zb(mr),f1(mz),f2(mz),f3(mz)
+        real*8                   :: rp(:),rs
+        real*8                   :: rhob(:,:),alpw(:,:),alpb(:,:),ksqw(:,:)
+        complex*16               :: ksq(:),ksqb(:,:),                          &
+                                    r1(mz,mp),r2(mz,mp),r3(mz,mp),             &
+                                    s1(mz,mp),s2(mz,mp),s3(mz,mp)
+        complex*16               :: pd1(mp),pd2(mp)
+
+        integer*8                :: jz,ns
+        real*8                   :: z
+        logical                  :: isup
+
+        ! Varying bathymetry.
+        isup = .false.
+
+        if(r >= rb(ib+1)) ib=ib+1
+        jz=iz
+        z=zb(ib)+(r+0.5*dr-rb(ib))*(zb(ib+1)-zb(ib))/(rb(ib+1)-rb(ib))
+        iz=int(1.0+z/dz,8)
+        iz=max(2,iz)
+        iz=min(nz,iz)
+
+        if(iz /= jz) isup = .true.
+
+        if(r >= rp(prof_i+1)) then
+            prof_i=prof_i+1
+            isup = .true.
+        end if
+
+        ! Turn off the stability constraints.
+        if(r >= rs)then
+            ns=0
+            rs=2.0*rmax
+            call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
+            isup = .true.
+        end if
+
+        ! Varying profiles.
+        if(isup)then
+            call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob(:,prof_i),alpw(:,prof_i),  &
+                       alpb(:,prof_i),ksq,ksqw(:,prof_i),ksqb(:,prof_i),       &
+                       f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
+        end if
+
+    end subroutine
+
     subroutine selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,             &
                     ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
         ! The self-starter.
@@ -252,5 +389,6 @@ contains
         call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob(:,1),alpw(:,1),alpb(:,1),ksq,  &
                    ksqw(:,1),ksqb(:,1),f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
         call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+
     end subroutine
 end module

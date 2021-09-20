@@ -31,9 +31,6 @@ contains
         integer*8               :: i,j,max_nprof,nprof,iostat
         real*8                  :: z,ri,freq,eta,r_read
 
-        !integer*8               :: i, j, iostat, nprof, max_nprof
-        !real*8                  :: eta, r_read
-
         eta=0.01832338997198569352181968569348d0
 
         read(1,*)
@@ -375,10 +372,13 @@ contains
 
         if(iz /= jz) isup = .true.
 
+
         if(r >= rp(prof_i+1)) then
             prof_i=prof_i+1
             isup = .true.
         end if
+
+
 
         ! Turn off the stability constraints.
         if(r >= rs)then

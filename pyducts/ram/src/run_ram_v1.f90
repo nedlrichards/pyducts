@@ -1,5 +1,5 @@
 program ram
-    use ram_v3 ,only : setup, updat, solve, selfs, pe_pade, matrc
+    use ram_v3 ,only    : setup, updat, solve, selfs, pe_pade, matrc
     use constants ,only : pi
     implicit none
 

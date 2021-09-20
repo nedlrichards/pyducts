@@ -33,18 +33,6 @@ class RamIn:
             specs += fid.readline().split()[:4]
             specs += fid.readline().split()[:4]
 
-            self.bathy = np.array(list(_bathy(self.rmax, fid)))
-
-            all_profiles = list(self.read_profiles(fid))
-
-            cw         = np.array([p[0] for p in all_profiles])
-            cb         = np.array([p[1] for p in all_profiles])
-            self.rho_b = np.array([p[2] for p in all_profiles])
-            attn       = np.array([p[3] for p in all_profiles])
-
-            # 0 range is added to ranges of profiles
-            rp         = np.array([0.] + [p[4] for p in all_profiles])
-
             # assign specifications to variables
             specs = specs[::-1]  # flip to make pop more intuative
             self.freq = float(specs.pop())
@@ -62,34 +50,49 @@ class RamIn:
             self.num_stability = int(specs.pop())
             self.range_stability = float(specs.pop())
 
-            self.omega = 2.0 * pi * self.freq
-            self.k0 = self.omega / self.c0
+            self.bathy = np.array(list(_bathy(self.rmax, fid)))
 
-            # reciver specifications
-            receiver_zbins = 1.0 + self.z_rcr / self.dz
-            self.receiver_zi = int(receiver_zbins)
-            self.receiver_zmod = receiver_zbins - self.receiver_zi
-
+            # compute zaxis for use in profile interpolation
             num_z = int(self.zmax / self.dz - 0.5)
             self.zaxis = (np.arange(num_z) + 1) * self.dz
-            self.z_save = self.zaxis[self.zaxis < self.zmax_plot]
-            self.z_save = self.z_save[::self.z_decimation]
 
-            # find closest index of the bottom
-            z_bottom = self.bathy[0, 1]
-            bottom_index = int(1.0 + z_bottom / self.dz)
-            bottom_index = max(2, bottom_index)
-            self.bottom_index = min(num_z, bottom_index)
+            all_profiles = list(self.read_profiles(fid))
 
-            if self.range_stability < self.dr:
-                self.range_stability = 2.0 * self.rmax
+            cw         = np.array([p[0] for p in all_profiles])
+            cb         = np.array([p[1] for p in all_profiles])
+            self.rho_b = np.array([p[2] for p in all_profiles])
+            attn       = np.array([p[3] for p in all_profiles])
 
-            # computed quantities from interpolated profiles
-            self.ksqw = (self.omega / cw) ** 2 - self.k0 ** 2
-            self.ksqb = ((self.omega / cb) * (1.0 + 1j * eta * attn)) ** 2 \
-                      - self.k0 ** 2
-            self.alpw = np.sqrt(cw / self.c0)
-            self.alpb = np.sqrt(self.rho_b * cb / self.c0)
+            # 0 range is added to ranges of profiles
+            rp         = np.array([0.] + [p[4] for p in all_profiles])
+
+        self.omega = 2.0 * pi * self.freq
+        self.k0 = self.omega / self.c0
+
+        # reciver specifications
+        receiver_zbins = 1.0 + self.z_rcr / self.dz
+        self.receiver_zi = int(receiver_zbins)
+        self.receiver_zmod = receiver_zbins - self.receiver_zi
+
+
+        self.z_save = self.zaxis[self.zaxis < self.zmax_plot]
+        self.z_save = self.z_save[::self.z_decimation]
+
+        # find closest index of the bottom
+        z_bottom = self.bathy[0, 1]
+        bottom_index = int(1.0 + z_bottom / self.dz)
+        bottom_index = max(2, bottom_index)
+        self.bottom_index = min(num_z, bottom_index)
+
+        if self.range_stability < self.dr:
+            self.range_stability = 2.0 * self.rmax
+
+        # computed quantities from interpolated profiles
+        self.ksqw = (self.omega / cw) ** 2 - self.k0 ** 2
+        self.ksqb = ((self.omega / cb) * (1.0 + 1j * eta * attn)) ** 2 \
+                    - self.k0 ** 2
+        self.alpw = np.sqrt(cw / self.c0)
+        self.alpb = np.sqrt(self.rho_b * cb / self.c0)
 
     def read_profiles(self, fid):
         """Read profile blocks of ram.in in sequence"""

@@ -5,7 +5,7 @@ from ram_wrapper import read_line, read_grid
 import os
 
 ram_exe = './bin/ram'
-ram_typed_exe = './bin/ram_v3'
+ram_typed_exe = './bin/ram_v4'
 
 # typing changes tl by a bit, put absolute threshold on accuracy
 eps = 0.1

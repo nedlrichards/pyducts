@@ -5,11 +5,11 @@ module ram_io
 contains
     subroutine inram(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,    &
                      omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,       &
-                     ksqb,zs,zr,zmax,zmplt)
+                     ksqb,zs,zr,zmax,zmplt,nprof)
 
         ! Initialize the parameters, acoustic field, and matrices.
         integer*8  ,intent(in)  :: mr,mz,mp
-        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
+        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof
         real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
 
         real*8     ,intent(out) ,allocatable ,dimension(:)  :: rp
@@ -21,7 +21,7 @@ contains
         real*8     ,allocatable ,dimension(:)    :: rp_tmp
         real*8     ,allocatable ,dimension(:,:)  :: cw,cb,attn,rho_tmp
 
-        integer*8               :: i,j,max_nprof,nprof,iostat
+        integer*8               :: i,j,max_nprof,iostat
         real*8                  :: z,ri,freq,eta,r_read
 
         open(unit=1,status='old',file='ram.in')
@@ -202,6 +202,45 @@ contains
         end do
 
         write(3)(poutg(j),j=1,lz)
+
+    end subroutine
+
+    subroutine storeln(mz,ir,dir,r,f3,u,iline,pline)
+        ! Output transmission loss line
+        integer*8  ,intent(in)  :: mz,ir,iline
+        real*8     ,intent(in)  :: dir,r,f3(mz)
+        complex*16 ,intent(in)  :: u(mz)
+        complex*16 ,intent(out) :: pline(:)
+
+        real*8                  :: eps
+        complex*16              :: ur,pout
+
+        eps=1e-20
+
+        ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
+        pout=ur/sqrt(r+eps)
+        pline(iline) = pout
+    end subroutine
+
+    subroutine storegr(mz,ndz,nzplt,lz,r,f3,u,isave,pgrid)
+        ! Output transmission loss.
+        integer*8  ,intent(in) :: mz,ndz,nzplt,lz,isave
+        real*8     ,intent(in) :: r,f3(mz)
+        complex*16 ,intent(in) :: u(mz)
+        complex*16 ,intent(out):: pgrid(:,:)
+
+        integer*8              :: i,j
+        real*8                 :: eps
+        complex*16             :: ur,poutg(mz)
+
+        eps=1e-20
+
+        j=0
+        do i=ndz,nzplt,ndz
+            ur=u(i)*f3(i)
+            j=j+1
+            pgrid(j, isave)=ur/sqrt(r+eps)
+        end do
 
     end subroutine
 end module

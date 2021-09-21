@@ -378,8 +378,6 @@ contains
             isup = .true.
         end if
 
-
-
         ! Turn off the stability constraints.
         if(r >= rs)then
             ns=0

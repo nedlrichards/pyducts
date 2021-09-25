@@ -105,11 +105,11 @@ contains
 
     end subroutine
 
-    complex function g(sig,x,alp,nu)
+    complex*16 function g(sig,x,alp,nu)
         ! The operator function.
         real*8 ,intent(in) :: sig,x,alp,nu
 
-        g=(1.0d0-nu*x)**2*cdexp(alp*log(1.0d0+x)+i_*sig*(-1.0d0+sqrt(1.0d0+x)))
+        g=(1.0d0-nu*x)**2*exp(alp*log(1.0d0+x)+i_*sig*(-1.0d0+sqrt(1.0d0+x)))
     end function
 
     subroutine deriv(m,n,sig,alp,dg,dh1,dh2,dh3,bin,nu)

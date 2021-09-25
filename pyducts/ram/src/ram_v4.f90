@@ -69,7 +69,7 @@ contains
         prof_i = 1
         ib=1
         do i = 2, nr
-            call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,              &
+            call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,rmax,k0,              &
                     r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,                         &
                     ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2,prof_i)
 
@@ -308,13 +308,13 @@ contains
         end do
     end subroutine
 
-    subroutine updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,              &
+    subroutine updat(mr,mz,nz,mp,np,iz,ib,dr,dz,rmax,k0,              &
                      r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,                         &
                      ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2,prof_i)
         ! Matrix updates.
         integer*8 ,intent(in)    :: mr,mz,nz,mp,np
         integer*8 ,intent(inout) :: iz,ib,prof_i
-        real*8                   :: dr,dz,omega,rmax,c0,k0,r,rb(mr),           &
+        real*8                   :: dr,dz,rmax,k0,r,rb(mr),           &
                                     zb(mr),f1(mz),f2(mz),f3(mz)
         real*8                   :: rp(:),rs
         real*8                   :: rhob(:,:),alpw(:,:),alpb(:,:),ksqw(:,:)

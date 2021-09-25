@@ -1626,7 +1626,7 @@ static PyTypeObject *__pyx_ptype_5numpy_character = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 
 /* Module declarations from 'epade' */
-__PYX_EXTERN_C DL_IMPORT(void) c_epade(int *, int *, int *, int *, double *, double *, __pyx_t_double_complex *, __pyx_t_double_complex *); /*proto*/
+__PYX_EXTERN_C DL_IMPORT(void) c_pe_pade(int *, int *, int *, int *, double *, double *, __pyx_t_double_complex *, __pyx_t_double_complex *); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo___pyx_t_double_complex = { "double complex", NULL, sizeof(__pyx_t_double_complex), { 0 }, 0, 'C', 0, 0 };
 #define __Pyx_MODULE_NAME "epade"
 extern int __pyx_module_is_main_epade;
@@ -1650,15 +1650,14 @@ static const char __pyx_k_empty[] = "empty";
 static const char __pyx_k_epade[] = "epade";
 static const char __pyx_k_numpy[] = "numpy";
 static const char __pyx_k_import[] = "__import__";
+static const char __pyx_k_pe_pade[] = "pe_pade";
 static const char __pyx_k_epade_pyx[] = "epade.pyx";
-static const char __pyx_k_complex128[] = "complex128";
 static const char __pyx_k_ImportError[] = "ImportError";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
 static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_n_s_cline_in_traceback;
-static PyObject *__pyx_n_s_complex128;
 static PyObject *__pyx_n_s_dr;
 static PyObject *__pyx_n_s_dtype;
 static PyObject *__pyx_n_s_empty;
@@ -1677,8 +1676,9 @@ static PyObject *__pyx_kp_u_numpy_core_multiarray_failed_to;
 static PyObject *__pyx_kp_u_numpy_core_umath_failed_to_impor;
 static PyObject *__pyx_n_s_pd1;
 static PyObject *__pyx_n_s_pd2;
+static PyObject *__pyx_n_s_pe_pade;
 static PyObject *__pyx_n_s_test;
-static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_np, int __pyx_v_ns, int __pyx_v_ip, double __pyx_v_k0, double __pyx_v_dr, int __pyx_v_mp); /* proto */
+static PyObject *__pyx_pf_5epade_pe_pade(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_np, int __pyx_v_ns, int __pyx_v_ip, double __pyx_v_k0, double __pyx_v_dr, int __pyx_v_mp); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
@@ -1688,15 +1688,15 @@ static PyObject *__pyx_codeobj__4;
 /* "epade.pyx":8
  *                  complex *pd1, complex *pd2)
  * 
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_5epade_1epade = {"epade", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5epade_1epade, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5epade_1pe_pade(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_5epade_1pe_pade = {"pe_pade", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_5epade_1pe_pade, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_5epade_1pe_pade(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_np;
   int __pyx_v_ns;
   int __pyx_v_ip;
@@ -1708,7 +1708,7 @@ static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_ar
   int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("epade (wrapper)", 0);
+  __Pyx_RefNannySetupContext("pe_pade (wrapper)", 0);
   {
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_np,&__pyx_n_s_ns,&__pyx_n_s_ip,&__pyx_n_s_k0,&__pyx_n_s_dr,&__pyx_n_s_mp,0};
     PyObject* values[6] = {0,0,0,0,0,0};
@@ -1740,25 +1740,25 @@ static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_ar
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_ns)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("epade", 0, 5, 6, 1); __PYX_ERR(0, 8, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("pe_pade", 0, 5, 6, 1); __PYX_ERR(0, 8, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_ip)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("epade", 0, 5, 6, 2); __PYX_ERR(0, 8, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("pe_pade", 0, 5, 6, 2); __PYX_ERR(0, 8, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_k0)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("epade", 0, 5, 6, 3); __PYX_ERR(0, 8, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("pe_pade", 0, 5, 6, 3); __PYX_ERR(0, 8, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("epade", 0, 5, 6, 4); __PYX_ERR(0, 8, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("pe_pade", 0, 5, 6, 4); __PYX_ERR(0, 8, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
@@ -1768,7 +1768,7 @@ static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_ar
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "epade") < 0)) __PYX_ERR(0, 8, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "pe_pade") < 0)) __PYX_ERR(0, 8, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -1796,20 +1796,20 @@ static PyObject *__pyx_pw_5epade_1epade(PyObject *__pyx_self, PyObject *__pyx_ar
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("epade", 0, 5, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 8, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("pe_pade", 0, 5, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 8, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("epade.epade", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("epade.pe_pade", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_5epade_epade(__pyx_self, __pyx_v_np, __pyx_v_ns, __pyx_v_ip, __pyx_v_k0, __pyx_v_dr, __pyx_v_mp);
+  __pyx_r = __pyx_pf_5epade_pe_pade(__pyx_self, __pyx_v_np, __pyx_v_ns, __pyx_v_ip, __pyx_v_k0, __pyx_v_dr, __pyx_v_mp);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_np, int __pyx_v_ns, int __pyx_v_ip, double __pyx_v_k0, double __pyx_v_dr, int __pyx_v_mp) {
+static PyObject *__pyx_pf_5epade_pe_pade(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_np, int __pyx_v_ns, int __pyx_v_ip, double __pyx_v_k0, double __pyx_v_dr, int __pyx_v_mp) {
   PyArrayObject *__pyx_v_pd1 = 0;
   PyArrayObject *__pyx_v_pd2 = 0;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_pd1;
@@ -1822,16 +1822,15 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
   PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
+  PyArrayObject *__pyx_t_5 = NULL;
   PyArrayObject *__pyx_t_6 = NULL;
-  PyArrayObject *__pyx_t_7 = NULL;
-  Py_ssize_t __pyx_t_8;
-  int __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
+  Py_ssize_t __pyx_t_7;
+  int __pyx_t_8;
+  Py_ssize_t __pyx_t_9;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("epade", 0);
+  __Pyx_RefNannySetupContext("pe_pade", 0);
   __pyx_pybuffer_pd1.pybuffer.buf = NULL;
   __pyx_pybuffer_pd1.refcount = 0;
   __pyx_pybuffernd_pd1.data = NULL;
@@ -1843,10 +1842,10 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
 
   /* "epade.pyx":9
  * 
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)             # <<<<<<<<<<<<<<
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
- *     c_epade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
+ *     c_pe_pade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -1859,41 +1858,35 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
   __pyx_t_2 = 0;
   __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 9, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, ((PyObject *)(&PyComplex_Type))) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_complex128); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 9, __pyx_L1_error)
-  __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_5 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pd1.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo___pyx_t_double_complex, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pd1.rcbuffer->pybuffer, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo___pyx_t_double_complex, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_pd1 = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_pd1.rcbuffer->pybuffer.buf = NULL;
       __PYX_ERR(0, 9, __pyx_L1_error)
     } else {__pyx_pybuffernd_pd1.diminfo[0].strides = __pyx_pybuffernd_pd1.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_pd1.diminfo[0].shape = __pyx_pybuffernd_pd1.rcbuffer->pybuffer.shape[0];
     }
   }
-  __pyx_t_6 = 0;
-  __pyx_v_pd1 = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
+  __pyx_v_pd1 = ((PyArrayObject *)__pyx_t_4);
+  __pyx_t_4 = 0;
 
   /* "epade.pyx":10
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)             # <<<<<<<<<<<<<<
- *     c_epade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)             # <<<<<<<<<<<<<<
+ *     c_pe_pade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
  *     return pd1, pd2
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_mp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
@@ -1903,84 +1896,78 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
   __pyx_t_2 = 0;
   __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, ((PyObject *)(&PyComplex_Type))) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_complex128); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 10, __pyx_L1_error)
-  __pyx_t_7 = ((PyArrayObject *)__pyx_t_4);
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_6 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pd2.rcbuffer->pybuffer, (PyObject*)__pyx_t_7, &__Pyx_TypeInfo___pyx_t_double_complex, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) {
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pd2.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo___pyx_t_double_complex, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_pd2 = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_pd2.rcbuffer->pybuffer.buf = NULL;
       __PYX_ERR(0, 10, __pyx_L1_error)
     } else {__pyx_pybuffernd_pd2.diminfo[0].strides = __pyx_pybuffernd_pd2.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_pd2.diminfo[0].shape = __pyx_pybuffernd_pd2.rcbuffer->pybuffer.shape[0];
     }
   }
-  __pyx_t_7 = 0;
-  __pyx_v_pd2 = ((PyArrayObject *)__pyx_t_4);
-  __pyx_t_4 = 0;
+  __pyx_t_6 = 0;
+  __pyx_v_pd2 = ((PyArrayObject *)__pyx_t_1);
+  __pyx_t_1 = 0;
 
   /* "epade.pyx":11
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
- *     c_epade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
+ *     c_pe_pade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])             # <<<<<<<<<<<<<<
  *     return pd1, pd2
  */
-  __pyx_t_8 = 0;
-  __pyx_t_9 = -1;
-  if (__pyx_t_8 < 0) {
-    __pyx_t_8 += __pyx_pybuffernd_pd1.diminfo[0].shape;
-    if (unlikely(__pyx_t_8 < 0)) __pyx_t_9 = 0;
-  } else if (unlikely(__pyx_t_8 >= __pyx_pybuffernd_pd1.diminfo[0].shape)) __pyx_t_9 = 0;
-  if (unlikely(__pyx_t_9 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+  __pyx_t_7 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_7 < 0) {
+    __pyx_t_7 += __pyx_pybuffernd_pd1.diminfo[0].shape;
+    if (unlikely(__pyx_t_7 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_7 >= __pyx_pybuffernd_pd1.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
     __PYX_ERR(0, 11, __pyx_L1_error)
   }
-  __pyx_t_10 = 0;
-  __pyx_t_9 = -1;
-  if (__pyx_t_10 < 0) {
-    __pyx_t_10 += __pyx_pybuffernd_pd2.diminfo[0].shape;
-    if (unlikely(__pyx_t_10 < 0)) __pyx_t_9 = 0;
-  } else if (unlikely(__pyx_t_10 >= __pyx_pybuffernd_pd2.diminfo[0].shape)) __pyx_t_9 = 0;
-  if (unlikely(__pyx_t_9 != -1)) {
-    __Pyx_RaiseBufferIndexError(__pyx_t_9);
+  __pyx_t_9 = 0;
+  __pyx_t_8 = -1;
+  if (__pyx_t_9 < 0) {
+    __pyx_t_9 += __pyx_pybuffernd_pd2.diminfo[0].shape;
+    if (unlikely(__pyx_t_9 < 0)) __pyx_t_8 = 0;
+  } else if (unlikely(__pyx_t_9 >= __pyx_pybuffernd_pd2.diminfo[0].shape)) __pyx_t_8 = 0;
+  if (unlikely(__pyx_t_8 != -1)) {
+    __Pyx_RaiseBufferIndexError(__pyx_t_8);
     __PYX_ERR(0, 11, __pyx_L1_error)
   }
-  c_epade((&__pyx_v_mp), (&__pyx_v_np), (&__pyx_v_ns), (&__pyx_v_ip), (&__pyx_v_k0), (&__pyx_v_dr), (&(*__Pyx_BufPtrCContig1d(__pyx_t_double_complex *, __pyx_pybuffernd_pd1.rcbuffer->pybuffer.buf, __pyx_t_8, __pyx_pybuffernd_pd1.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_double_complex *, __pyx_pybuffernd_pd2.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_pd2.diminfo[0].strides))));
+  c_pe_pade((&__pyx_v_mp), (&__pyx_v_np), (&__pyx_v_ns), (&__pyx_v_ip), (&__pyx_v_k0), (&__pyx_v_dr), (&(*__Pyx_BufPtrCContig1d(__pyx_t_double_complex *, __pyx_pybuffernd_pd1.rcbuffer->pybuffer.buf, __pyx_t_7, __pyx_pybuffernd_pd1.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_double_complex *, __pyx_pybuffernd_pd2.rcbuffer->pybuffer.buf, __pyx_t_9, __pyx_pybuffernd_pd2.diminfo[0].strides))));
 
   /* "epade.pyx":12
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
- *     c_epade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
+ *     c_pe_pade(&mp, &np, &ns, &ip, &k0, &dr, &pd1[0], &pd2[0])
  *     return pd1, pd2             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 12, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_pd1));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_pd1));
-  PyTuple_SET_ITEM(__pyx_t_4, 0, ((PyObject *)__pyx_v_pd1));
+  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_pd1));
   __Pyx_INCREF(((PyObject *)__pyx_v_pd2));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_pd2));
-  PyTuple_SET_ITEM(__pyx_t_4, 1, ((PyObject *)__pyx_v_pd2));
-  __pyx_r = __pyx_t_4;
-  __pyx_t_4 = 0;
+  PyTuple_SET_ITEM(__pyx_t_1, 1, ((PyObject *)__pyx_v_pd2));
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 
   /* "epade.pyx":8
  *                  complex *pd1, complex *pd2)
  * 
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
  */
 
   /* function exit code */
@@ -1989,7 +1976,6 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
   { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
@@ -1997,7 +1983,7 @@ static PyObject *__pyx_pf_5epade_epade(CYTHON_UNUSED PyObject *__pyx_self, int _
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_pd1.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_pd2.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("epade.epade", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("epade.pe_pade", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   goto __pyx_L2;
   __pyx_L0:;
@@ -3076,7 +3062,6 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ImportError, __pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
-  {&__pyx_n_s_complex128, __pyx_k_complex128, sizeof(__pyx_k_complex128), 0, 0, 1, 1},
   {&__pyx_n_s_dr, __pyx_k_dr, sizeof(__pyx_k_dr), 0, 0, 1, 1},
   {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
   {&__pyx_n_s_empty, __pyx_k_empty, sizeof(__pyx_k_empty), 0, 0, 1, 1},
@@ -3095,6 +3080,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_numpy_core_umath_failed_to_impor, __pyx_k_numpy_core_umath_failed_to_impor, sizeof(__pyx_k_numpy_core_umath_failed_to_impor), 0, 1, 0, 0},
   {&__pyx_n_s_pd1, __pyx_k_pd1, sizeof(__pyx_k_pd1), 0, 0, 1, 1},
   {&__pyx_n_s_pd2, __pyx_k_pd2, sizeof(__pyx_k_pd2), 0, 0, 1, 1},
+  {&__pyx_n_s_pe_pade, __pyx_k_pe_pade, sizeof(__pyx_k_pe_pade), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -3134,14 +3120,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "epade.pyx":8
  *                  complex *pd1, complex *pd2)
  * 
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
  */
   __pyx_tuple__3 = PyTuple_Pack(8, __pyx_n_s_np, __pyx_n_s_ns, __pyx_n_s_ip, __pyx_n_s_k0, __pyx_n_s_dr, __pyx_n_s_mp, __pyx_n_s_pd1, __pyx_n_s_pd2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(6, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_epade_pyx, __pyx_n_s_epade, 8, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(6, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_epade_pyx, __pyx_n_s_pe_pade, 8, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -3496,13 +3482,13 @@ if (!__Pyx_RefNanny) {
   /* "epade.pyx":8
  *                  complex *pd1, complex *pd2)
  * 
- * def epade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
- *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=np.complex128)
- *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=np.complex128)
+ * def pe_pade(int np, int ns, int ip, double k0, double dr, int mp=20):             # <<<<<<<<<<<<<<
+ *     cdef ndarray[complex, mode="c"] pd1 = empty(mp, dtype=complex)
+ *     cdef ndarray[complex, mode="c"] pd2 = empty(mp, dtype=complex)
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_5epade_1epade, NULL, __pyx_n_s_epade); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_5epade_1pe_pade, NULL, __pyx_n_s_epade); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_epade, __pyx_t_2) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pe_pade, __pyx_t_2) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "epade.pyx":1

@@ -3,13 +3,13 @@ module ram_io
     implicit none
 
 contains
-    subroutine inram(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,    &
-                     omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,       &
-                     ksqb,zs,zr,zmax,zmplt,nprof)
+    subroutine inram(mr,nr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof,dir, &
+                     dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw, &
+                     ksqb,zs,zr,zmax,zmplt)
 
         ! Initialize the parameters, acoustic field, and matrices.
         integer*8  ,intent(in)  :: mr,mz,mp
-        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof
+        integer*8  ,intent(out) :: nr,nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof
         real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
 
         real*8     ,intent(out) ,allocatable ,dimension(:)  :: rp
@@ -21,7 +21,7 @@ contains
         real*8     ,allocatable ,dimension(:)    :: rp_tmp
         real*8     ,allocatable ,dimension(:,:)  :: cw,cb,attn,rho_tmp
 
-        integer*8               :: i,j,max_nprof,iostat
+        integer*8               :: i,j,iostat
         real*8                  :: z,ri,freq,eta,r_read
 
         open(unit=1,status='old',file='ram.in')
@@ -43,7 +43,6 @@ contains
         rb(i)=2.0*rmax
         zb(i)=zb(i-1)
 
-        max_nprof=int(rmax / dr, 8)
         omega=2.0*pi*freq
         ri=1.0+zr/dz
         ir=int(ri,8)
@@ -56,6 +55,8 @@ contains
         iz=max(2,iz)
         iz=min(nz,iz)
         if(rs.lt.dr)rs=2.0*rmax
+
+        nr = int(rmax / dr, 8)
 
         if(nz+2.gt.mz)then
         write(*,*)'   Need to increase parameter mz to ',nz+2
@@ -75,11 +76,11 @@ contains
             lz=lz+1
         end do
 
-        allocate(rp_tmp(max_nprof))
-        allocate(cw(nz+2, max_nprof))
-        allocate(cb(nz+2, max_nprof))
-        allocate(attn(nz+2, max_nprof))
-        allocate(rho_tmp(nz+2, max_nprof))
+        allocate(rp_tmp(nr))
+        allocate(cw(nz+2, nr))
+        allocate(cb(nz+2, nr))
+        allocate(attn(nz+2, nr))
+        allocate(rho_tmp(nz+2, nr))
 
         iostat = 0
         ! set range of 0th profile before loop
@@ -205,12 +206,12 @@ contains
 
     end subroutine
 
-    subroutine storeln(mz,ir,dir,r,f3,u,iline,pline)
+    subroutine storeln(mz,ir,dir,r,f3,u,ppoint)
         ! Output transmission loss line
-        integer*8  ,intent(in)  :: mz,ir,iline
+        integer*8  ,intent(in)  :: mz,ir
         real*8     ,intent(in)  :: dir,r,f3(mz)
         complex*16 ,intent(in)  :: u(mz)
-        complex*16 ,intent(out) :: pline(:)
+        complex*16 ,intent(out) :: ppoint
 
         real*8                  :: eps
         complex*16              :: ur,pout
@@ -219,15 +220,15 @@ contains
 
         ur=(1.0-dir)*f3(ir)*u(ir)+dir*f3(ir+1)*u(ir+1)
         pout=ur/sqrt(r+eps)
-        pline(iline) = pout
+        ppoint = pout
     end subroutine
 
-    subroutine storegr(mz,ndz,nzplt,lz,r,f3,u,isave,pgrid)
+    subroutine storegr(mz,ndz,nzplt,lz,r,f3,u,pvec)
         ! Output transmission loss.
-        integer*8  ,intent(in) :: mz,ndz,nzplt,lz,isave
+        integer*8  ,intent(in) :: mz,ndz,nzplt,lz
         real*8     ,intent(in) :: r,f3(mz)
         complex*16 ,intent(in) :: u(mz)
-        complex*16 ,intent(out):: pgrid(:,:)
+        complex*16 ,intent(out):: pvec(:)
 
         integer*8              :: i,j
         real*8                 :: eps
@@ -239,7 +240,7 @@ contains
         do i=ndz,nzplt,ndz
             ur=u(i)*f3(i)
             j=j+1
-            pgrid(j, isave)=ur/sqrt(r+eps)
+            pvec(j)=ur/sqrt(r+eps)
         end do
 
     end subroutine

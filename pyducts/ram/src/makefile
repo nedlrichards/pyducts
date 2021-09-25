@@ -7,8 +7,7 @@ RM := rm -f
 prefix := ../bin/
 
 # list of all source files
-#SRCS := cmplx_roots_sg.f90 constants.f90 pade_coeffs.f90 ram_v3.f90 ram_v4.f90 ram_io.f90
-SRCS := cmplx_roots_sg.f90 constants.f90 pade_coeffs.f90 ram_v3.f90 ram_io.f90
+SRCS := cmplx_roots_sg.f90 constants.f90 pade_coeffs.f90 ram_v3.f90 ram_v4.f90 ram_io.f90
 
 RAM := ../original_ram/ram15.f
 PROG_RAM := ram
@@ -29,8 +28,8 @@ OBJS := $(addsuffix .o, $(SRCS))
 
 .PHONY: all clean
 
-all: $(PROG_RAM) $(PROG_RAM_V1) $(PROG_RAM_V2) $(PROG_RAM_V4)
-#all: $(PROG_RAM) $(PROG_RAM_V1) $(PROG_RAM_V2) $(PROG_RAM_V3) $(PROG_RAM_V4)
+#all: $(PROG_RAM) $(PROG_RAM_V1) $(PROG_RAM_V2) $(PROG_RAM_V4)
+all: $(PROG_RAM) $(PROG_RAM_V1) $(PROG_RAM_V2) $(PROG_RAM_V3) $(PROG_RAM_V4)
 
 $(PROG_RAM): $(RAM)
 	$(LD) -o $(prefix)$@ $^
@@ -41,8 +40,8 @@ $(PROG_RAM_V1): $(RAM_V1) $(OBJS)
 $(PROG_RAM_V2): $(RAM_V2) $(OBJS)
 	$(LD) -o $(prefix)$@ $^
 
-#$(PROG_RAM_V3): $(RAM_V3) $(OBJS)
-	#$(LD) -o $(prefix)$@ $^
+$(PROG_RAM_V3): $(RAM_V3) $(OBJS)
+	$(LD) -o $(prefix)$@ $^
 
 $(PROG_RAM_V4): $(RAM_V4) $(OBJS)
 	$(LD) -o $(prefix)$@ $^

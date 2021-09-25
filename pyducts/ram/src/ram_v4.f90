@@ -1,86 +1,31 @@
 module ram_v4
     use pade_coeffs   ,only : pe_pade
     use constants     ,only : pi, i_
-    use ram_io        ,only : inram
+    use ram_io ,only      : outln, outgr, storeln, storegr
     implicit none
 
 contains
-    subroutine setup(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,                 &
-                     ir,dir,dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,         &
-                     alpw,alpb,ksq,ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,            &
-                     s1,s2,s3,pd1,pd2,zs,zr,zmax,zmplt)
+    subroutine main(mr,nr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof,dir,  &
+                    dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,  &
+                    ksqb,zs,zr,zmax,zmplt,pline,pgrid,tofile)
 
-        ! Initialize the parameters, acoustic field, and matrices.
-        integer*8  ,intent(in)  :: mr,mz,mp
-        integer*8  ,intent(out) :: nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir
-        real*8     ,intent(out) :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
+        integer*8  :: mr, mz, mp, nprof
+        integer*8  :: nr,nz,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,mdr,prof_i,i,j
+        real*8     :: dir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
+        logical    :: tofile
 
-        real*8   ,allocatable    ,dimension(:)    :: rp_tmp
-        real*8   ,allocatable    ,dimension(:,:)  :: cw,cb,attn,rho_tmp
+        complex*16 ,dimension (mp)    :: pd1,pd2
+        real*8     ,dimension (mr)    :: rb, zb
+        real*8     ,dimension (mz)    :: f1,f2,f3
+        complex*16 ,dimension (mz)    :: ksq,u,v
+        complex*16 ,dimension (mz,mp) :: r1,r2,r3,s1,s2,s3
 
-        real*8     ,intent(out) ,allocatable ,dimension(:)  :: rp
-        real*8     ,intent(out) ,allocatable ,dimension(:,:):: rhob,alpw,alpb,ksqw
-        complex*16 ,intent(out) ,allocatable ,dimension(:,:):: ksqb
+        real*8     ,dimension (nprof)          :: rp
+        real*8     ,dimension (nz+2,nprof-1)   :: rhob,alpw,alpb,ksqw
+        complex*16 ,dimension (nz+2,nprof-1)   :: ksqb
 
-        complex*16 ,intent(out) ,dimension(mz)    :: u,v,ksq
-        complex*16 ,intent(out) ,dimension(mz,mp) :: r1,r2,r3,s1,s2,s3
-        complex*16 ,intent(out) ,dimension(mp)    :: pd1,pd2
-
-        real*8     ,intent(out) ,dimension(mr)    :: rb,zb
-        real*8     ,intent(out) ,dimension(mz)    :: f1,f2,f3
-
-        integer*8               :: i,j,max_nprof,nprof,iostat
-        real*8                  :: z,ri,freq,eta,r_read
-
-        call inram(mr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,dir,dr,dz,      &
-                     omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,       &
-                     ksqb,zs,zr,zmax,zmplt)
-
-        !eta=0.01832338997198569352181968569348d0
-
-        !read(1,*)
-        !read(1,*)freq,zs,zr
-        !read(1,*)rmax,dr,ndr
-        !read(1,*)zmax,dz,ndz,zmplt
-        !read(1,*)c0,np,ns,rs
-
-        !i=1
-        !read(1,*)rb(i),zb(i)
-        !do while (rb(i) >= 0.0)
-            !i=i+1
-            !read(1,*)rb(i),zb(i)
-        !end do
-        !rb(i)=2.0*rmax
-        !zb(i)=zb(i-1)
-
-        !ib=1
-        !r=dr
-        !max_nprof=int(rmax / dr, 8)
-        !omega=2.0*pi*freq
-        !ri=1.0+zr/dz
-        !ir=int(ri,8)
-        !dir=ri-float(ir)
-        !k0=omega/c0
-        !nz=int(zmax/dz-0.5,8)
-        !nzplt=int(zmplt/dz-0.5,8)
-        !z=zb(1)
-        !iz=int(1.0+z/dz,8)
-        !iz=max(2,iz)
-        !iz=min(nz,iz)
-        !if(rs.lt.dr)rs=2.0*rmax
-
-        !if(nz+2.gt.mz)then
-        !write(*,*)'   Need to increase parameter mz to ',nz+2
-        !stop
-        !end if
-        !if(np.gt.mp)then
-        !write(*,*)'   Need to increase parameter mp to ',np
-        !stop
-        !end if
-        !if(i.gt.mr)then
-        !write(*,*)'   Need to increase parameter mr to ',i
-        !stop
-        !end if
+        complex*16 ,dimension (nr)    ,intent(out) :: pline
+        complex*16 ,dimension (lz,nr) ,intent(out) :: pgrid
 
         do j=1,mp
             r3(1,j)=0.0
@@ -92,53 +37,117 @@ contains
             v(i)=0.0
         end do
 
-        !lz=0
-        !do i=ndz,nzplt,ndz
-            !lz=lz+1
-        !end do
+        call selfs(mz,nz,mp,np,ns,iz,zs,dr,dz,k0,rhob,alpw,alpb,ksq,           &
+                ksqw,ksqb,f1,f2,f3,u,v,r1,r2,r3,s1,s2,s3,pd1,pd2)
 
-        !allocate(rp_tmp(max_nprof))
-        !allocate(cw(mz, max_nprof))
-        !allocate(cb(mz, max_nprof))
-        !allocate(attn(mz, max_nprof))
-        !allocate(rho_tmp(mz, max_nprof))
+        i = 1
+        j=1
+        r = i * dr
 
-        !iostat = 0
-        ! set range of 0th profile before loop
-        !r_read = 0
-        !nprof = 1
+        if (tofile) then
+            open(unit=2,status='unknown',file='tl.line')
+            open(unit=3,status='unknown',file='tl.grid',form='unformatted')
+            write(3) omega/(2*pi),zs,zr,rmax,dr,ndr,zmax,dz,ndz,zmplt,c0,np,ns,rs,lz
+        end if
 
-        !do while (iostat == 0)
-            !rp_tmp(nprof) = r_read
-            ! interpolated profiles read from file
+        if (tofile) then
+            call outln(mz,ir,dir,r,f3,u)
+            call outgr(mz,ndz,nzplt,lz,r,f3,u)
+        end if
 
-            !call zread(nz,dz,cw(:, nprof))
-            !call zread(nz,dz,cb(:, nprof))
-            !call zread(nz,dz,rho_tmp(:, nprof))
-            !call zread(nz,dz,attn(:, nprof))
+        call storeln(mz,ir,dir,r,f3,u,pline(i))
+        call storegr(mz,ndz,nzplt,lz,r,f3,u,pgrid(:,j))
+        j = j + 1
 
-            !read(1,*,iostat=iostat)r_read
-            !nprof = nprof + 1
-        !end do
+        !! The propagation matrices.
+        call pe_pade(mp,np,ns,1_8,k0,dr,pd1,pd2)
+        call matrc(mz,nz,mp,np,iz,iz,dz,k0,rhob(:,1),alpw(:,1),alpb(:,1),      &
+                ksq,ksqw(:,1),ksqb(:,1),f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
 
-        !rp_tmp(nprof)=2.0*rmax
+        ! March the acoustic field out in range.
+        mdr=0
+        prof_i = 1
+        ib=1
+        do i = 2, nr
+            call updat(mr,mz,nz,mp,np,iz,ib,dr,dz,omega,rmax,c0,k0,              &
+                    r,rp,rs,rb,zb,rhob,alpw,alpb,ksq,                         &
+                    ksqw,ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2,prof_i)
 
-        !allocate(rp(nprof))
-        !allocate(ksqw(nz+2, nprof-1))
-        !allocate(ksqb(nz+2, nprof-1))
-        !allocate(alpw(nz+2, nprof-1))
-        !allocate(alpb(nz+2, nprof-1))
-        !allocate(rhob(nz+2, nprof-1))
+            call solve(mz,nz,mp,np,iz,u,v,r1,r2,r3,s1,s2,s3)
+            r = i * dr
 
-        !rp = rp_tmp(1:nprof)
-        ! computed quantities from interpolated profiles
-        !ksqw=(omega / cw(1:nz+2, 1:nprof-1)) ** 2 - k0 ** 2
-        !ksqb=((omega / cb(1:nz+2, 1:nprof-1))                                  &
-            !* (1.0 + i_ * eta * attn(1:nz+2, 1:nprof-1))) ** 2 - k0 ** 2
-        !alpw=sqrt(cw(1:nz+2, 1:nprof-1) / c0)
-        !alpb=sqrt(rho_tmp(1:nz+2, 1:nprof-1) * cb(1:nz+2, 1:nprof-1) / c0)
-        !rhob=rho_tmp(1:nz+2, 1:nprof-1)
+            if (tofile) then
+                call outln(mz,ir,dir,r,f3,u)
+            end if
 
+            call storeln(mz,ir,dir,r,f3,u,pline(i))
+
+            mdr=mdr+1
+            if(mdr == ndr)then
+                mdr=0
+
+                if (tofile) then
+                    call outgr(mz,ndz,nzplt,lz,r,f3,u)
+                end if
+
+                call storegr(mz,ndz,nzplt,lz,r,f3,u,pgrid(:,j))
+                j = j + 1
+
+            end if
+        end do
+
+        if (tofile) then
+            close(2)
+            close(3)
+        end if
+
+    end subroutine
+
+    subroutine zread(nz,dz,prof)
+        ! Profile reader and interpolator.
+        integer*8 ,intent(in)  :: nz
+        real*8    ,intent(in)  :: dz
+        real*8    ,intent(out) :: prof(nz+2)
+
+        integer*8              :: i,j,k,iold
+        real*8                 :: zi,profi
+
+
+        do i=1, nz+2
+            prof(i) = -1.0
+        end do
+
+        read(1,*) zi,profi
+        prof(1) = profi
+        i=int(1.5 + zi / dz,8)
+        prof(i) = profi
+        iold=i
+
+        read(1,*)zi, profi
+        do while (zi >= 0.0)
+            i=int(1.5 + zi / dz, 8)
+            if (i == iold) i = i + 1
+            prof(i) = profi
+            iold = i
+            read(1,*)zi, profi
+        end do
+
+        prof(nz+2)=prof(i)
+        i=1
+        j=1
+
+        do while (j < nz + 2)
+            i=i+1
+            if (prof(i) < 0.0) cycle
+
+            if(i-j > 1) then
+            ! interpolat between defined values
+                do k = j + 1, i - 1
+                    prof(k)=prof(j)+float(k-j)*(prof(i)-prof(j))/float(i-j)
+                end do
+            end if
+            j=i
+        end do
     end subroutine
 
     subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,          &
@@ -329,6 +338,7 @@ contains
         iz=min(nz,iz)
 
         if(iz /= jz) isup = .true.
+
 
         if(r >= rp(prof_i+1)) then
             prof_i=prof_i+1

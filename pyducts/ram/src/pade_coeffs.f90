@@ -1,5 +1,6 @@
 module pade_coeffs
-    use constants ,only : i_, pi
+    use constants      ,only : i_, pi
+    use cmplx_roots_sg ,only : cmplx_roots_gen
     implicit none
 
 contains
@@ -87,8 +88,7 @@ contains
         do j=1,np
             dh1(j+1)=b(2*j-1)
         end do
-        !call fndrt(dh1,np,dh2,2*mp)
-        call cmplx_roots_gen(dh2,dh1,np,.True.,.False.)
+        call cmplx_roots_gen(dh2,dh1,int(np,4),.True.,.False.)
         do j=1,np
             pd1(j)=-1.0d0/dh2(j)
         end do
@@ -97,8 +97,7 @@ contains
         do j=1,np
             dh1(j+1)=b(2*j)
         end do
-        !call fndrt(dh1,np,dh2,2*mp)
-        call cmplx_roots_gen(dh2,dh1,np,.True.,.False.)
+        call cmplx_roots_gen(dh2,dh1,int(np,4),.True.,.False.)
         do j=1,np
             pd2(j)=-1.0d0/dh2(j)
         end do

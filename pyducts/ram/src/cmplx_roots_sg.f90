@@ -37,7 +37,7 @@
 !     3   sort_5_points_by_separation   - sorting of an array of 5 points, 1st most isolated, 4th and 5th - closest
 !     4   sort_5_points_by_separation_i - sorting same as above, returns array of indicies rather than sorted array
 !     5   find_2_closest_from_5         - finds closest pair of 5 points
-!     6   cmplx_laguerre                - Laguerre's method with simplified Adams' stopping criterion 
+!     6   cmplx_laguerre                - Laguerre's method with simplified Adams' stopping criterion
 !     7   cmplx_newton_spec             - Newton's method with stopping criterion calculated every 10 steps
 !     8   cmplx_laguerre2newton         - three regime method: Laguerre's, Second-order General method and Newton's
 !     9   solve_quadratic_eq            - quadratic equation solver
@@ -60,61 +60,67 @@
 ! ver. 2016.01.21 bug fix
 ! ver. 2016.04.28 bug fix
 !
+module cmplx_roots_sg
+    implicit none
+    private
+    public cmplx_roots_gen, cmplx_roots_5
+    integer, parameter :: RK = 8
+    complex(kind=RK), parameter :: zero=cmplx(0d0,0d0,RK)
+    complex(kind=RK), parameter :: c_one=cmplx(1d0,0d0,RK)
+contains
 !-------------------------------------------------------------------!
 ! _1_                  CMPLX_ROOTS_GEN                              !
 !-------------------------------------------------------------------!
 subroutine cmplx_roots_gen(roots, poly, degree, polish_roots_after, use_roots_as_starting_points)
-  ! This subroutine finds roots of a complex polynomial. 
+  ! This subroutine finds roots of a complex polynomial.
   ! It is general, however less fast or robust than cmplx_roots_5
   ! which contains failsafe checks in the polishing stage, but is
   ! designed only for 5th order polynomials.
   ! It uses a new dynamic root finding algorithm (see the Paper).
   !
   ! It can use Laguerre's method (subroutine cmplx_laguerre)
-  ! or Laguerre->SG->Newton method (subroutine 
-  ! cmplx_laguerre2newton - this is default choice) to find 
-  ! roots. It divides polynomial one by one by found roots. At the 
-  ! end it finds last root from Viete's formula for quadratic 
+  ! or Laguerre->SG->Newton method (subroutine
+  ! cmplx_laguerre2newton - this is default choice) to find
+  ! roots. It divides polynomial one by one by found roots. At the
+  ! end it finds last root from Viete's formula for quadratic
   ! equation. Finally, it polishes all found roots using a full
   ! polynomial and Newton's or Laguerre's method (default is
-  ! Laguerre's - subroutine cmplx_laguerre). 
+  ! Laguerre's - subroutine cmplx_laguerre).
   ! You can change default choices by commenting out and uncommenting
   ! certain lines in the code below.
   !
   ! Note:
-  ! - we solve for the last root with Viete's formula rather 
+  ! - we solve for the last root with Viete's formula rather
   !   than doing full Laguerre step (which is time consuming
   !   and unnecessary)
   ! - we do not introduce any preference to real roots
   ! - in Laguerre implementation we omit unneccesarry calculation of
   !   absolute values of denominator
-  ! - we do not sort roots. If you need to sort 
+  ! - we do not sort roots. If you need to sort
   !   roots - we have provided sorting subroutine called:
-  !   sort_5_points_by_separation, which sorts points from most 
-  !   isolated to most close. Algorithm in this routine can be 
+  !   sort_5_points_by_separation, which sorts points from most
+  !   isolated to most close. Algorithm in this routine can be
   !   easily used for number of points different than 5.
   !
-  implicit none
   ! roots  - array which will hold all roots that had been found.
-  !          If the flag 'use_roots_as_starting_points' is set to 
+  !          If the flag 'use_roots_as_starting_points' is set to
   !          .true., then instead of point (0,0) we use value from
   !          this array as starting point for cmplx_laguerre
-  ! poly -   is an array of polynomial cooefs, length = degree+1, 
+  ! poly -   is an array of polynomial cooefs, length = degree+1,
   !          poly(1) is a constant term:
   !               1              2             3
   !          poly(1) x^0 + poly(2) x^1 + poly(3) x^2 + ...
   ! degree - degree of the polynomial and size of 'roots' array
   ! polish_roots_after - after all roots have been found by dividing
   !          original polynomial by each root found,
-  !          you can opt in to polish all roots using full  
+  !          you can opt in to polish all roots using full
   !          polynomial
-  ! use_roots_as_starting_points - usually we start Laguerre's 
-  !          method from point (0,0), but you can decide to use the 
+  ! use_roots_as_starting_points - usually we start Laguerre's
+  !          method from point (0,0), but you can decide to use the
   !          values of 'roots' array as starting point for each new
   !          root that is searched for. This is useful if you have
-  !          very rough idea where some of the roots can be. 
+  !          very rough idea where some of the roots can be.
   !
-  integer, parameter :: RK = 8
   integer, intent(in) :: degree
   complex(kind=RK), dimension(degree+1), intent(in) :: poly ! coeffs of the polynomial
   complex(kind=RK), dimension(degree), intent(inout) :: roots
@@ -127,7 +133,7 @@ subroutine cmplx_roots_gen(roots, poly, degree, polish_roots_after, use_roots_as
   complex(kind=RK) :: coef, prev
 
   poly2=poly
-  
+
   ! initialize starting points
   if(.not.use_roots_as_starting_points) roots=zero
 
@@ -141,7 +147,7 @@ subroutine cmplx_roots_gen(roots, poly, degree, polish_roots_after, use_roots_as
   do n=degree, 3, -1
 
     ! find root with Laguerre's method
-    !call cmplx_laguerre(poly2, n, roots(n), iter, success) 
+    !call cmplx_laguerre(poly2, n, roots(n), iter, success)
     ! or
     ! find root with (Laguerre's method -> SG method -> Newton's method)
     call cmplx_laguerre2newton(poly2, n, roots(n), iter, success, 2)
@@ -174,12 +180,12 @@ subroutine cmplx_roots_gen(roots, poly, degree, polish_roots_after, use_roots_as
 
 
   if(polish_roots_after)then
-    do n=1, degree ! polish roots one-by-one with a full polynomial 
-      call cmplx_laguerre(poly, degree, roots(n), iter, success) 
+    do n=1, degree ! polish roots one-by-one with a full polynomial
+      call cmplx_laguerre(poly, degree, roots(n), iter, success)
       !call cmplx_newton_spec(poly, degree, roots(n), iter, success)
     enddo
-  endif  
- 
+  endif
+
   return
 end
 
@@ -188,7 +194,6 @@ end
 ! _2_                     CMPLX_ROOTS_5                             !
 !-------------------------------------------------------------------!
 subroutine cmplx_roots_5(roots, first_3_roots_order_changed, poly, polish_only)
-  implicit none
   ! Subroutine finds or polishes roots of a complex polynomial 
   ! (degree=5)
   ! This routine is especially tailored for solving binary lens 
@@ -238,7 +243,6 @@ subroutine cmplx_roots_5(roots, first_3_roots_order_changed, poly, polish_only)
   ! Jan Skowron 2011
   !
   integer, parameter :: degree=5
-  integer, parameter :: RK=8  ! kind for real and complex variables
   complex(kind=RK), dimension(degree), intent(inout) :: roots
   logical, intent(out) :: first_3_roots_order_changed
   complex(kind=RK), dimension(degree+1), intent(in)  :: poly
@@ -250,7 +254,6 @@ subroutine cmplx_roots_5(roots, first_3_roots_order_changed, poly, polish_only)
   integer :: iter, loops, go_to_robust, m, root4, root5, i, i2
   complex(kind=RK), dimension(degree+1) :: poly2
   !integer, dimension(degree) :: sorted_ind
-  complex(kind=RK), parameter :: zero=cmplx(0d0,0d0,RK)
   logical :: succ
 
 
@@ -393,8 +396,6 @@ subroutine sort_5_points_by_separation(points)
   !
   ! Algorithm works well for all dimensions. We put n=5 as 
   ! a hardcoded value just for optimization purposes.
-  implicit none
-  integer, parameter :: RK=8
   integer, parameter :: n=5 !  works for different n as well, but is faster for n as constant (optimization)
   complex(kind=RK), dimension(n), intent(inout) :: points
 
@@ -422,8 +423,6 @@ subroutine sort_5_points_by_separation_i(sorted_points, points)
   !
   ! Algorithm works well for all dimensions. We put n=5 as 
   ! a hardcoded value just for optimization purposes.
-  implicit none
-  integer, parameter :: RK=8
   integer, parameter :: n=5 !  works for different n as well, but is faster for n as constant (optimization)
   integer, dimension(n), intent(out) :: sorted_points
   complex(kind=RK), dimension(n), intent(in) :: points
@@ -501,8 +500,6 @@ end
 !-------------------------------------------------------------------!
 subroutine find_2_closest_from_5(i1,i2, d2min, points) 
   ! Returns indices of the two closest points out of array of 5
-  implicit none
-  integer, parameter :: RK=8
   integer, parameter :: n=5 ! will work for other n too, but it is faster with n as constant
   integer, intent(out) :: i1, i2
   !real(kind=RK), dimension(n,n) :: distances2
@@ -539,7 +536,6 @@ end
 ! _6_                     CMPLX_LAGUERRE                            !
 !-------------------------------------------------------------------!
 recursive subroutine cmplx_laguerre(poly, degree, root, iter, success)
-  implicit none
   ! Subroutine finds one root of a complex polynomial using 
   ! Laguerre's method. In every loop it calculates simplified 
   ! Adams' stopping criterion for the value of the polynomial.
@@ -562,7 +558,6 @@ recursive subroutine cmplx_laguerre(poly, degree, root, iter, success)
   ! For a summary of the method go to: 
   ! http://en.wikipedia.org/wiki/Laguerre's_method
   !
-  integer, parameter :: RK=8  ! kind for real and complex variables
   integer, parameter :: MAX_ITERS=200   ! Laguerre is used as a failsafe
   ! constants needed to break cycles in the scheme
   integer, parameter :: FRAC_JUMP_EVERY=10
@@ -592,8 +587,6 @@ recursive subroutine cmplx_laguerre(poly, degree, root, iter, success)
   real(kind=RK) :: ek, absroot, abs2p
   complex(kind=RK) :: fac_netwon, fac_extra, F_half, c_one_nth
   real(kind=RK) :: one_nth, n_1_nth, two_n_div_n_1
-  complex(kind=RK), parameter :: c_one=cmplx(1d0,0d0,RK)
-  complex(kind=RK), parameter :: zero=cmplx(0d0,0d0,RK)
   real(kind=RK) :: stopping_crit2
 
   !---------------------------------------
@@ -718,7 +711,6 @@ end
 ! _7_                     CMPLX_NEWTON_SPEC                         !
 !-------------------------------------------------------------------!
 recursive subroutine cmplx_newton_spec(poly, degree, root, iter, success)
-  implicit none
   ! Subroutine finds one root of a complex polynomial using 
   ! Newton's method. It calculates simplified Adams' stopping 
   ! criterion for the value of the polynomial once per 10 iterations (!),
@@ -746,7 +738,6 @@ recursive subroutine cmplx_newton_spec(poly, degree, root, iter, success)
   ! For a summary of the method go to: 
   ! http://en.wikipedia.org/wiki/Newton's_method
   !
-  integer, parameter :: RK=8  ! kind for real and complex variables
   integer, parameter :: MAX_ITERS=50
   ! constants needed to break cycles in the scheme
   integer, parameter :: FRAC_JUMP_EVERY=10
@@ -772,7 +763,6 @@ recursive subroutine cmplx_newton_spec(poly, degree, root, iter, success)
   logical :: good_to_go
   complex(kind=RK) :: dx, newroot
   real(kind=RK) :: ek, absroot, abs2p
-  complex(kind=RK), parameter :: zero=cmplx(0d0,0d0,RK)
   real(kind=RK) :: stopping_crit2
 
   !---------------------------------------
@@ -887,7 +877,6 @@ end
 ! _8_                     CMPLX_LAGUERRE2NEWTON                     !
 !-------------------------------------------------------------------!
 recursive subroutine cmplx_laguerre2newton(poly, degree, root, iter, success, starting_mode)
-  implicit none
   ! Subroutine finds one root of a complex polynomial using 
   ! Laguerre's method, Second-order General method and Newton's
   ! method - depending on the value of function F, which is a 
@@ -930,7 +919,6 @@ recursive subroutine cmplx_laguerre2newton(poly, degree, root, iter, success, st
   !
   ! For a summary of the method see the paper: Skowron & Gould (2012)
   !
-  integer, parameter :: RK=8  ! kind for real and complex variables
   integer, parameter :: MAX_ITERS=50
   ! constants needed to break cycles in the scheme
   integer, parameter :: FRAC_JUMP_EVERY=10
@@ -962,8 +950,6 @@ recursive subroutine cmplx_laguerre2newton(poly, degree, root, iter, success, st
   complex(kind=RK) :: fac_netwon, fac_extra, F_half, c_one_nth
   real(kind=RK) :: one_nth, n_1_nth, two_n_div_n_1
   integer :: mode
-  complex(kind=RK), parameter :: c_one=cmplx(1d0,0d0,RK)
-  complex(kind=RK), parameter :: zero=cmplx(0d0,0d0,RK)
   real(kind=RK) :: stopping_crit2
  
   iter=0
@@ -1293,7 +1279,6 @@ end
 !-------------------------------------------------------------------!
 subroutine solve_quadratic_eq(x0,x1,poly)
   ! Quadratic equation solver for complex polynomial (degree=2)
-  implicit none
   complex(kind=8), intent(out) :: x0, x1
   complex(kind=8), dimension(*), intent(in) :: poly ! coeffs of the polynomial
   ! poly - is an array of polynomial cooefs, length = degree+1, poly(1) is constant 
@@ -1350,7 +1335,6 @@ end
 subroutine solve_cubic_eq(x0,x1,x2,poly)
   ! Cubic equation solver for complex polynomial (degree=3)
   ! http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-  implicit none
   complex(kind=8), intent(out) :: x0, x1, x2
   complex(kind=8), dimension(*), intent(in) :: poly ! coeffs of the polynomial
   ! poly - is an array of polynomial cooefs, length = degree+1, poly(1) is constant 
@@ -1438,7 +1422,6 @@ subroutine divide_poly_1(polyout, remainder, p, polyin, degree)
   ! routine will work fine, though it will not set to zero the 
   ! unused, highest coefficient in the output array. You just have
   ! remember the proper degree of a polynomial.
-  implicit none
   integer, intent(in) :: degree
   complex(kind=8), dimension(degree), intent(out) :: polyout
   complex(kind=8), intent(out) :: remainder
@@ -1470,7 +1453,6 @@ complex(kind=8) function eval_poly(x, poly, degree, errk)
   ! at the point 'x'. This routine calculates also the simplified
   ! Adams' (1967) stopping criterion. ('errk' should be multiplied 
   ! by 2d-15 for double precision, real*8, arithmetic)
-  implicit none
   complex(kind=8), intent(in) :: x
   integer, intent(in) :: degree
   real(kind=8), intent(out) :: errk ! 
@@ -1511,7 +1493,6 @@ subroutine multiply_poly_1(polyout, p, polyin, degree)
   !
   ! You can provide same array as 'polyin' and 'polyout' - this
   ! routine will work fine.
-  implicit none
   integer, intent(in) :: degree  ! OLD degree, new will be +1
   complex(kind=8), dimension(degree+2), intent(out) :: polyout
   complex(kind=8), intent(in) :: p
@@ -1555,7 +1536,6 @@ subroutine create_poly_from_roots(poly, degree, a, roots)
   ! multiply_poly for arbitraty polynomial multiplications
   ! not multiply_poly_1.
   !
-  implicit none
   integer, intent(in) :: degree
   complex(kind=8), dimension(degree+1), intent(out) :: poly
   complex(kind=8), intent(in) :: a
@@ -1571,3 +1551,4 @@ subroutine create_poly_from_roots(poly, degree, a, roots)
 end
 
 !-------------------------------------------------------------------!
+end module

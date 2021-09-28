@@ -2,7 +2,7 @@ from numpy import empty, float64, complex128, asarray
 from numpy cimport ndarray, float64_t, complex128_t
 
 cdef extern:
-    void c_main(long *mr,long *nr,long *mz,long *nz,long *mp,long *np,long *ns,long *ndr,
+    void c_test(long *mr,long *nr,long *mz,long *nz,long *mp,long *np,long *ns,long *ndr,
                 long *ndz,long *iz,long *nzplt,long *lz,long *ib,long *ir,long *nprof,
                 double *rdir,double *dr,double *dz,double *omega,double *rmax,
                 double *c0,double *k0,double *r,double *rp,double *rs,
@@ -10,7 +10,7 @@ cdef extern:
                 double *ksqw,complex *ksqb,double *zs,double *zr,double *zmax,
                 double *zmplt,complex *pline,complex *pgrid)
 
-def main(long nr,long nz,long np,long ns,long ndr,
+def test(long nr,long nz,long np,long ns,long ndr,
          long ndz,long iz,long nzplt,long lz,long ib,long ir,long nprof,
          double rdir,double dr,double dz,double omega,double rmax,
          double c0,double k0,double r,
@@ -34,7 +34,7 @@ def main(long nr,long nz,long np,long ns,long ndr,
     cdef ndarray[float64_t,ndim=2] ksqw_f = asarray(ksqw, order="F")
     cdef ndarray[complex128_t,ndim=2] ksqb_f = asarray(ksqb, order="F")
 
-    c_main(&mr,&nr,&mz,&nz,&mp,&np,&ns,&ndr,&ndz,&iz,&nzplt,&lz,&ib,&ir,&nprof,
+    c_test(&mr,&nr,&mz,&nz,&mp,&np,&ns,&ndr,&ndz,&iz,&nzplt,&lz,&ib,&ir,&nprof,
            &rdir,&dr,&dz,&omega,&rmax,&c0,&k0,&r,&rp[0],&rs,&rb[0],&zb[0],
            &rhob_f[0,0],
            &alpw_f[0,0],

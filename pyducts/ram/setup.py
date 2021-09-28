@@ -6,15 +6,17 @@ def configuration(parent_package='',top_path=None):
     sources = ['src/constants.f90',
                'src/cmplx_roots_sg.f90',
                'src/pade_coeffs.f90',
-               'src/pade_coeffs_wrapper.f90',]
-               #'src/ram_io.f90',
-               #'src/ram_v4.f90',
-               #'src/ram_v4_wrapper.f90']
-    config.add_library('epade_src', sources=sources)
+               'src/pade_coeffs_wrapper.f90',
+               'src/ram_io.f90',
+               'src/ram_v4.f90',
+               'src/ram_v4_wrapper.f90']
+    config.add_library('ram_src', sources=sources)
     config.add_extension('epade',
-                         sources=['src/epade.c',],
+                         #sources=['src/epade.c',],
+                         sources=['src/ram_main_v4.c',],
+                         #sources=['src/epade.c',
                                   #'src/ram_main_v4.c'],
-                         libraries=['epade_src'])
+                         libraries=['ram_src'])
     return config
 
 if __name__ == '__main__':

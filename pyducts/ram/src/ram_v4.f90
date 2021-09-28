@@ -103,53 +103,6 @@ contains
 
     end subroutine
 
-    subroutine zread(nz,dz,prof)
-        ! Profile reader and interpolator.
-        integer*8 ,intent(in)  :: nz
-        real*8    ,intent(in)  :: dz
-        real*8    ,intent(out) :: prof(nz+2)
-
-        integer*8              :: i,j,k,iold
-        real*8                 :: zi,profi
-
-
-        do i=1, nz+2
-            prof(i) = -1.0
-        end do
-
-        read(1,*) zi,profi
-        prof(1) = profi
-        i=int(1.5 + zi / dz,8)
-        prof(i) = profi
-        iold=i
-
-        read(1,*)zi, profi
-        do while (zi >= 0.0)
-            i=int(1.5 + zi / dz, 8)
-            if (i == iold) i = i + 1
-            prof(i) = profi
-            iold = i
-            read(1,*)zi, profi
-        end do
-
-        prof(nz+2)=prof(i)
-        i=1
-        j=1
-
-        do while (j < nz + 2)
-            i=i+1
-            if (prof(i) < 0.0) cycle
-
-            if(i-j > 1) then
-            ! interpolat between defined values
-                do k = j + 1, i - 1
-                    prof(k)=prof(j)+float(k-j)*(prof(i)-prof(j))/float(i-j)
-                end do
-            end if
-            j=i
-        end do
-    end subroutine
-
     subroutine matrc(mz,nz,mp,np,iz,jz,dz,k0,rhob,alpw,alpb,ksq,ksqw,          &
                     ksqb,f1,f2,f3,r1,r2,r3,s1,s2,s3,pd1,pd2)
         ! The tridiagonal matrices.

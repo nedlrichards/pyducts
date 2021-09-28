@@ -6,10 +6,6 @@ use ram_v4        ,only : main
 implicit none
 
 contains
-subroutine c_test(mr) bind(c)
-
-integer(c_int64_t) :: mr
-end subroutine
 
 subroutine c_main(mr,nr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof,dir,    &
                   dr,dz,omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,    &

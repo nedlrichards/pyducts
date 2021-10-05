@@ -56,6 +56,10 @@ class RamIn:
             num_z = int(self.zmax / self.dz - 0.5)
             self.zaxis = (np.arange(num_z) + 1) * self.dz
 
+            # compute raxis for p line
+            num_r = int(self.rmax / self.dr)
+            self.raxis = np.arange(num_r) * self.dr
+
             all_profiles = list(self.read_profiles(fid))
 
             cw         = np.array([p[0] for p in all_profiles])
@@ -64,7 +68,7 @@ class RamIn:
             attn       = np.array([p[3] for p in all_profiles])
 
             # 0 range is added to ranges of profiles
-            rp         = np.array([0.] + [p[4] for p in all_profiles])
+            self.range_prof         = np.array([0.] + [p[4] for p in all_profiles])
 
         self.omega = 2.0 * pi * self.freq
         self.k0 = self.omega / self.c0
@@ -73,7 +77,6 @@ class RamIn:
         receiver_zbins = 1.0 + self.z_rcr / self.dz
         self.receiver_zi = int(receiver_zbins)
         self.receiver_zmod = receiver_zbins - self.receiver_zi
-
 
         self.z_save = self.zaxis[self.zaxis < self.zmax_plot]
         self.z_save = self.z_save[::self.z_decimation]
@@ -94,6 +97,36 @@ class RamIn:
         self.alpw = np.sqrt(cw / self.c0)
         self.alpb = np.sqrt(self.rho_b * cb / self.c0)
 
+    def ram_args(self):
+        """return arguments used by ram"""
+        args = (self.raxis.size,
+                self.zaxis.size,
+                self.num_pade,
+                self.num_stability,
+                self.range_decimation,
+                self.z_decimation,
+
+                self.dr,
+                self.dz,
+                self.omega,
+                self.rmax,
+                self.c0,
+                self.k0,
+                self.range_prof,
+                self.range_stability,
+                self.bathy[0],
+                self.bathy[1],
+                self.rho_b,
+                self.alpw,
+                self.alpb,
+                self.ksqw,
+                self.ksqb,
+                self.z_src,
+                self.z_rcr,
+                self.zmax,
+                self.zmax_plot)
+        return args
+
     def read_profiles(self, fid):
         """Read profile blocks of ram.in in sequence"""
 
@@ -111,8 +144,8 @@ class RamIn:
             yield zmax, last_value
 
         # read profiles at each defined range
-        rp = 0.
-        while rp < self.rmax:
+        range_prof = 0.
+        while range_prof < self.rmax:
             cw_points = np.array(list(_profile(self.zmax, fid)))
             cb_points = np.array(list(_profile(self.zmax, fid)))
             rho_b_points = np.array(list(_profile(self.zmax, fid)))
@@ -121,10 +154,10 @@ class RamIn:
             # end of file will occur here
             next_l = fid.readline()
             if next_l:
-                rp = float(next_l.split()[0])
+                range_prof = float(next_l.split()[0])
             else:
                 # break condition
-                rp = 2 * self.rmax
+                range_prof = 2 * self.rmax
 
             # interpolate profiles to ram grid
             cw = np.interp(self.zaxis, cw_points[:, 0], cw_points[:, 1])
@@ -132,4 +165,4 @@ class RamIn:
             rho_b = np.interp(self.zaxis, rho_b_points[:, 0], rho_b_points[:, 1])
             attn = np.interp(self.zaxis, attn_points[:, 0], attn_points[:, 1])
 
-            yield cw, cb, rho_b, attn, rp
+            yield cw, cb, rho_b, attn, range_prof

@@ -6,7 +6,6 @@ from ram_main_v4 import main
 
 ram_in = RamIn()
 
-
 pline, pgrid = main(ram_in.ram_args())
 
 long nr,long nz,long np,long ns,long ndr,

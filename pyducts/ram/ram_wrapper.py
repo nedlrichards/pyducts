@@ -109,7 +109,7 @@ class RamIn:
 
         if ndz is None:
             # aim for about lambda / 2 spacing on save grid
-            self.ndz = dz_decimation // 2
+            self.ndz = 1
         else:
             self.ndz = ndz
 
@@ -137,7 +137,7 @@ class RamIn:
     def write_frontmatter(self):
         """write frontmatter common to all profiles"""
 
-        with open("ram.in", 'w') as writer:
+        with open("ram.in", 'w+') as writer:
             writer.write("auto_gen\n")
             writer.write(f'{self.fc:.4f} {self.z_src:.4f} {self.z_rcr:.4f}\n')
             writer.write(f'{self.r_max:.4f} {self.dr:.4f} {self.ndr}\n')

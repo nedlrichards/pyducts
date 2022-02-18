@@ -10,6 +10,15 @@ cdef extern:
                 double *ksqw,complex *ksqb,double *zs,double *zr,double *zmax,
                 double *zmplt,complex *pline,complex *pgrid)
 
+    void c_inram(long *mr,long *nr,long *mz,long *nz,long *mp,long *np,
+                 long *ns,long *ndr,long *ndz,long *iz,long *nzplt,long *lz,
+                 long *ib,long *ir,long *nprof,double *rdir,double *dr,
+                 double *dz,double *omega,double *rmax,double *c0,
+                 double *k0,double *r,double *rp,double *rs,double *rb,
+                 double *zb,double *rhob,double *alpw,double *alpb,double *ksqw,
+                 complex *ksqb,double *zs,double *zr,double *zmax,double *zmplt)
+
+
 def main(long nr,long nz,long np,long ns,long ndr,
          long ndz,long iz,long nzplt,long lz,long ib,long ir,long nprof,
          double rdir,double dr,double dz,double omega,double rmax,
@@ -45,3 +54,23 @@ def main(long nr,long nz,long np,long ns,long ndr,
            &pline[0],&pgrid[0,0])
 
     return pline, pgrid
+
+def inram(long mr=1000,long mz=80000, long mp=20, long *nz, long *num_prof):
+
+    cdef long   nr,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof,
+    cdef double rdir,dr,dz,omega,rmax,c0,k0,r,rs,zs,zr,zmax,zmplt
+
+    cdef ndarray[float64_t,ndim=1] rp = np.empty(num_prof)
+    cdef ndarray[float64_t,ndim=1] rb = np.empty(mr)
+    cdef ndarray[float64_t,ndim=1] zb = np.empty(mr)
+
+    cdef ndarray[float64_t,ndim=2] rhob,alpw,alpb,ksqw
+    cdef ndarray[complex128_t,ndim=2] ksqb
+
+    c_inram(&mr,&nr,&mz,&nz,&mp,&np,&ns,&ndr,&ndz,&iz,&nzplt,&lz,&ib,&ir,&nprof,
+           &rdir,&dr,&dz,&omega,&rmax,&c0,&k0,&r,&rp[0],&rs,&rb[0],&zb[0],
+           &rhob[0,0],&alpw[0,0],&alpb[0,0],&ksqw[0,0],&ksqb[0,0],
+           &zs,&zr,&zmax,&zmplt)
+
+    return mr,nr,mz,nz,mp,np,ns,ndr,ndz,iz,nzplt,lz,ib,ir,nprof,rdir,dr,dz, \
+           omega,rmax,c0,k0,r,rp,rs,rb,zb,rhob,alpw,alpb,ksqw,ksqb,zs,zr,zmax,zmplt
